@@ -5,3 +5,5 @@ asyncpg
 httpx
 pydantic-settings
 redis
+pytest
+pytest-asyncio
