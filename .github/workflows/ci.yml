@@ -55,7 +55,7 @@ jobs:
 
       - name: Run tests
         env:
-          DATABASE_URL: postgresql://user:password@localhost:5432/test
+          DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/test
           REDIS_URL: redis://localhost:6379/0
           APP_NAME: FastAPI-Base-Setup
           PYTHONPATH: backend
