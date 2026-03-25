@@ -1,5 +1,4 @@
-from fastapi import FastAPI, Depends
-from app.core.config import settings
+from fastapi import FastAPI
 from app.core.health import check_disk, check_db, check_redis
 from app.core.redis import redis_client
 from app.core.db import db_session

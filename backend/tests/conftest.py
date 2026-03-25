@@ -7,7 +7,6 @@ from sqlmodel import SQLModel
 
 from app.main import app
 from app.core.db import get_session
-from app.models.Users import User 
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
