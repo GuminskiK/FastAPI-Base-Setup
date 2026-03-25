@@ -22,6 +22,11 @@ jobs:
         ports: ['5432:5432']
         options: >-
           --health-cmd="pg_isready -U user" --health-interval=10s --health-timeout=5s --health-retries=5
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=5
 
     steps:
       - name: Checkout
@@ -50,7 +55,9 @@ jobs:
 
       - name: Run tests
         env:
-          DATABASE_URL: postgresql://user:password@localhost:5432/test
+          DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/test
+          REDIS_URL: redis://localhost:6379/0
+          APP_NAME: FastAPI-Base-Setup
           PYTHONPATH: backend
         run: |
           pytest -q
