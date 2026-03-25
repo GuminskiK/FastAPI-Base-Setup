@@ -1,0 +1,59 @@
+from app.core.auth.apikeys import get_user_by_api_key
+from app.core.db import db_session
+from app.models.Users import User
+from app.core.config import settings
+from fastapi import Depends, HTTPException, status
+from jose import jwt, JWTError
+from fastapi.security import OAuth2PasswordBearer, APIKeyHeader
+from typing import Annotated, Optional
+from sqlmodel import select
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+async def get_user_by_username(session: db_session, username: str) -> User | None:
+    result = await session.exec(select(User).where(User.username == username))
+    user = result.one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail= "User not found")
+    return user
+
+async def get_current_active_user( session: db_session, token: Optional[str] = Depends(oauth2_scheme)) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED, 
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+            
+    if token:
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            username: str = payload.get("sub")
+            if username is None:
+                raise credentials_exception
+            user = await get_user_by_username(session, username)
+            if user:
+                return user
+        except JWTError:
+            pass
+            
+    raise credentials_exception
+
+async def get_current_user( session: db_session, token: Optional[str] = Depends(oauth2_scheme), api_key: Optional[str] = Depends(api_key_header)) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED, 
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    if api_key:
+        user = await get_user_by_api_key(session, api_key)
+        if user:
+            return user
+            
+    get_current_active_user(session, token)
+            
+    raise credentials_exception
+
+current_active_user = Annotated[User, Depends(get_current_active_user)]
+current_user = Annotated[User, Depends(get_current_user)]

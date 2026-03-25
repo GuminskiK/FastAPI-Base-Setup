@@ -3,10 +3,13 @@ from app.core.health import check_disk, check_db, check_redis
 from app.core.redis import redis_client
 from app.core.db import db_session
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routers import users
+from app.api.routers import users, auth, apikeys, two_fa
 
 app = FastAPI()
 app.include_router(users.router)
+app.include_router(auth.router)
+app.include_router(apikeys.router)
+app.include_router(two_fa.router)
 
 origins = [
     "http://localhost.tiangolo.com",
