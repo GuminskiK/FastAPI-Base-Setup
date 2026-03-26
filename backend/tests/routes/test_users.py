@@ -2,11 +2,11 @@ def test_post_good(client):
     
     response = client.post(
         "/users", 
-        json={ "username": "TestUser", "plain_password": "TestPassword"}
+        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword"}
     )
 
-    assert response.status_code == 201
-    assert response.json() == {"username": "TestUser"}
+    print("RESP:", response.json()); assert response.status_code == 201
+    assert response.json() == {"username": "TestUser", "email": "test@example.com"}
 
 def test_post_no_username(client):
     
@@ -23,13 +23,13 @@ def test_get_user_ok(client):
     
     client.post(
         "/users", 
-        json={ "username": "TestUser", "plain_password": "TestPassword"}
+        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword"}
     )
 
     response = client.get("/users/1")
 
     assert response.status_code == 200
-    assert response.json() == {"username": "TestUser"}
+    assert response.json() == {"username": "TestUser", "email": "test@example.com"}
 
 def test_get_user_no_user(client):
 
@@ -42,20 +42,20 @@ def test_get_all_users(client):
     
     client.post(
         "/users", 
-        json={ "username": "TestUser", "plain_password": "TestPassword"}
+        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword"}
     )
 
     client.post(
         "/users", 
-        json={ "username": "TestUser2", "plain_password": "TestPassword"}
+        json={ "username": "TestUser2", "email": "test2@example.com", "plain_password": "TestPassword"}
     )
 
     response = client.get("/users")
 
     assert response.status_code == 200
     response_data = response.json()
-    assert {"username": "TestUser"} in response_data
-    assert {"username": "TestUser2"} in response_data
+    assert {"username": "TestUser", "email": "test@example.com"} in response_data
+    assert {"username": "TestUser2", "email": "test2@example.com"} in response_data
 
 def test_get_users_no_user(client):
 
@@ -69,22 +69,22 @@ def test_patch_user_ok(client):
 
     client.post(
         "/users", 
-        json={ "username": "TestUser", "plain_password": "TestPassword"}
+        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword"}
     )
 
     response = client.patch(
         "/users/1", 
-        json={ "username": "TestUserPatched", "plain_password": "TestPassword"}
+        json={ "username": "TestUserPatched"}
     )
         
     assert response.status_code == 200
-    assert response.json() == {"username": "TestUserPatched"}
+    assert response.json() == {"username": "TestUserPatched", "email": "test@example.com"}
 
 def test_patch_user_no_user(client):
 
     response = client.patch(
         "/users/1", 
-        json={ "username": "TestUserPatched", "plain_password": "TestPassword"}
+        json={ "username": "TestUserPatched"}
     )
         
     assert response.status_code == 404
@@ -94,7 +94,7 @@ def test_patch_unknown_field(client):
 
     client.post(
         "/users", 
-        json={ "username": "TestUser", "plain_password": "TestPassword"}
+        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword"}
     )
 
     response = client.patch(
@@ -108,7 +108,7 @@ def test_delete_user(client):
 
     client.post(
         "/users", 
-        json={ "username": "TestUser", "plain_password": "TestPassword"}
+        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword"}
     )
 
     response = client.delete(
@@ -116,7 +116,7 @@ def test_delete_user(client):
     )
 
     assert response.status_code == 200
-    assert response.json() == {"username": "TestUser"}
+    assert response.json() == {"username": "TestUser", "email": "test@example.com"}
     
 def test_delete_user_no_user(client):
     

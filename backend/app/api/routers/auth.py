@@ -68,7 +68,7 @@ async def login_token(
 
 
 @router.post("/refresh", response_model=Token)
-async def refresh_token(redis: redis_client, refresh_token: str = Body(...)):
+async def refresh_token(redis: redis_client, refresh_token: str = Body(..., embed=True)):
     try:
         payload = decode_token(refresh_token)
     except Exception:
@@ -108,7 +108,7 @@ async def refresh_token(redis: redis_client, refresh_token: str = Body(...)):
     return Token(access_token=access_token, token_type="bearer", refresh_token=new_refresh_token)
 
 @router.post("/logout")
-async def logout(redis: redis_client, refresh_token: str = Body(...)):
+async def logout(redis: redis_client, refresh_token: str = Body(..., embed=True)):
     try:
         payload = decode_token(refresh_token)
         if payload.get("typ") != "refresh":

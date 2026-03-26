@@ -17,8 +17,9 @@ def _hash_api_key(api_key: str) -> str:
 async def generate_api_key_for_user(session: db_session, user_id: int, name: str) -> str:
     key = secrets.token_urlsafe(32)
     hashed = _hash_api_key(key)
-    result = await session.exec(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
+    statement = select(User).where(User.id == user_id)
+    result = await session.exec(statement)
+    user = result.one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     apikey = APIKey(name = name, hashed_key=hashed, key_hint= hashed[:4] + hashed[-4:], user_id=user_id)    
@@ -28,7 +29,7 @@ async def generate_api_key_for_user(session: db_session, user_id: int, name: str
 
 async def revoke_user_api_key(session: db_session, user_id: int, key_id: int) -> None:
     result = await session.exec(select(APIKey).where(APIKey.user_id == user_id, APIKey.id == key_id))
-    apikey = result.scalar_one_or_none()
+    apikey = result.one_or_none()
     if not apikey:
         raise HTTPException(status_code=404, detail="APIKey not found")
     await session.delete(apikey)
@@ -37,11 +38,11 @@ async def revoke_user_api_key(session: db_session, user_id: int, key_id: int) ->
 async def get_user_by_api_key(session: db_session, api_key: str) -> User | None:
     hashed = _hash_api_key(api_key)
     result = await session.exec(select(APIKey).where(APIKey.hashed_key == hashed))
-    apikey = result.scalar_one_or_none()
+    apikey = result.one_or_none()
     if not apikey:
         return None
     user_result = await session.exec(select(User).where(User.id == apikey.user_id))
-    user = user_result.scalar_one_or_none()
+    user = user_result.one_or_none()
     if not user:
         return None
     return user
