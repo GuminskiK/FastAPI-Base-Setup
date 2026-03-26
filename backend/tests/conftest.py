@@ -8,6 +8,8 @@ from sqlmodel import SQLModel
 from app.main import app
 from app.core.db import get_session
 from app.core.redis import get_redis
+from app.models.Users import User
+from app.services.users import get_current_admin_user
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -117,3 +119,24 @@ def client(db_session):
     
     app.dependency_overrides.pop(get_session, None)
     app.dependency_overrides.pop(get_redis, None)
+
+
+@pytest.fixture(scope="function")
+def override_admin():
+    """
+    Nadpisuje zależność wymagającą bycia administratorem (get_current_admin_user).
+    Dzięki temu wstrzykiwany jest gotowy "admin" bez konieczności logowania się i używania nagłówka Bearer.
+    """
+    async def mock_admin():
+        return User(
+            id=999,
+            username="testadmin",
+            email="admin@example.com",
+            is_superuser=True,
+            hashed_password="mocked_password",
+            email_blind_index="mocked_index"
+        )
+    
+    app.dependency_overrides[get_current_admin_user] = mock_admin
+    yield
+    app.dependency_overrides.pop(get_current_admin_user, None)

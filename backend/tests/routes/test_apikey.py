@@ -25,7 +25,7 @@ def test_delete_api_key(client):
     )
 
     response = client.delete(
-        "/apikeys/1", headers=headers
+        "/apikeys/1?user_id=1", headers=headers
     )
 
     assert response.status_code == 200
@@ -37,7 +37,7 @@ def test_get_my_keys(client):
         "/apikeys?name=MyKey", headers=headers
     )
 
-    response = client.get("/apikeys", headers=headers)
+    response = client.get("/apikeys?user_id=1", headers=headers)
 
     assert response.status_code == 200
     assert "key_hint" in response.json()[0]

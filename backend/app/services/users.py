@@ -56,4 +56,29 @@ async def get_current_user( session: db_session, token: Optional[str] = Depends(
             return user
             
     return await get_current_active_user(session, token)
+
+async def get_current_admin_user(current_user: User = Depends(get_current_active_user)) -> User:
+    if not current_user.is_superuser: 
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Brak wystarczających uprawnień (Wymagany Admin)"
+        )
+    return current_user
+
+
+async def verify_user_ownership_or_admin(
+    user_id: int, # FastAPI automatycznie wstrzygnie to z adresu URL (np. z /users/{user_id})!
+    current_user: User = Depends(get_current_active_user)
+) -> User:
+    
+    if current_user.id != user_id and not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Możesz zarządzać tylko swoimi zasobami."
+        )
+    return current_user
+
 current_user = Annotated[User, Depends(get_current_user)]
+current_active_user = Annotated[User, Depends(get_current_active_user)]
+current_admin_user = Annotated[User, Depends(get_current_admin_user)]
+owner_or_admin = Annotated[User, Depends(verify_user_ownership_or_admin)]

@@ -16,7 +16,7 @@ from app.core.db import db_session
 from app.services.users import get_user_by_username
 from app.core.redis import redis_client
 from app.models.Tokens import Token
-from app.services.users import current_user
+from app.services.users import current_user, owner_or_admin
 import pyotp
 
 
@@ -122,7 +122,7 @@ async def logout(redis: redis_client, refresh_token: str = Body(..., embed=True)
     return {"message": "Logged out"}
 
 @router.get("/sessions")
-async def get_auth_sessions(redis: redis_client, user: current_user):
+async def get_auth_sessions(redis: redis_client, user: owner_or_admin):
     sids = list(await redis.smembers(f"user_sessions:{user.id}"))
     results = []
     for sid in sids:
@@ -144,7 +144,7 @@ async def get_auth_sessions(redis: redis_client, user: current_user):
     return results
 
 @router.post("/logout/{sid}")
-async def logout_with_session_id(redis: redis_client, user: current_user, sid: str):
+async def logout_with_session_id(redis: redis_client, user: owner_or_admin, sid: str):
     if not await redis.sismember(f"user_sessions:{user.id}", sid):
         raise HTTPException(status_code=404, detail="session not found")
 

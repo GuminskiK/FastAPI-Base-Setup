@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Body, Request, Form
-from app.services.users import current_user
+from app.services.users import current_active_user
 from app.core.db import db_session
 from app.core.config import settings
 import secrets
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/2fa", tags=["2fa"])
 APP_NAME = settings.APP_NAME
 
 @router.post("/setup")
-async def setup_2fa(user: current_user, session: db_session):
+async def setup_2fa(user: current_active_user, session: db_session):
     if user.is_totp_enabled:
         raise HTTPException(status_code=400, detail="2FA is already enabled")
         
@@ -40,7 +40,7 @@ async def setup_2fa(user: current_user, session: db_session):
     }
 
 @router.post("/enable")
-async def enable_2fa(user: current_user, session: db_session, code: str = Body(..., embed=True)):
+async def enable_2fa(user: current_active_user, session: db_session, code: str = Body(..., embed=True)):
     if user.is_totp_enabled:
         raise HTTPException(status_code=400, detail="2FA is already enabled")
         
@@ -58,7 +58,7 @@ async def enable_2fa(user: current_user, session: db_session, code: str = Body(.
     return {"message": "2FA successfully enabled"}
 
 @router.post("/disable")
-async def disable_2fa(user: current_user, session: db_session, code: str = Body(..., embed=True)):
+async def disable_2fa(user: current_active_user, session: db_session, code: str = Body(..., embed=True)):
     if not user.is_totp_enabled:
         raise HTTPException(status_code=400, detail="2FA is not enabled")
         

@@ -7,6 +7,8 @@ class UserBase(SQLModel):
 
 class User(UserBase, table=True):
     id: int | None = Field(default= None, primary_key=True)
+    is_superuser: bool = Field(default = False)
+    
     hashed_password: str = Field()
     email_blind_index: str
 

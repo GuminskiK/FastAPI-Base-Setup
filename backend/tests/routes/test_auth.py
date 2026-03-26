@@ -179,7 +179,7 @@ def test_get_sessions_and_logout_specific(client):
 
     # Get active sessions
     sessions_resp = client.get(
-        "/auth/sessions",
+        "/auth/sessions?user_id=1",
         headers={"Authorization": f"Bearer {token1}"}
     )
     print("SESS:", sessions_resp.json()); assert sessions_resp.status_code == 200
@@ -193,14 +193,14 @@ def test_get_sessions_and_logout_specific(client):
     
     # Delete Device 2 session
     delete_resp = client.post(
-        f"/auth/logout/{sid2}",
+        f"/auth/logout/{sid2}?user_id=1",
         headers={"Authorization": f"Bearer {token1}"}
     )
     assert delete_resp.status_code == 200
     
     # Verify it was deleted
     sessions_resp2 = client.get(
-        "/auth/sessions",
+        "/auth/sessions?user_id=1",
         headers={"Authorization": f"Bearer {token1}"}
     )
     sessions2 = sessions_resp2.json()
