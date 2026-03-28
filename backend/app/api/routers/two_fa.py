@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Body, Request, Fo
 from app.services.users import current_active_user
 from app.core.db import db_session
 from app.core.config import settings
-from app.services.two_fa_service import *
+from app.services.two_fa_service import generate_setup_data, Setup2FAResult, verify_and_enable, verify_and_disable, Enable2FAResult, Disable2FAResult
 import pyotp
 
 
