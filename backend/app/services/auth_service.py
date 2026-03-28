@@ -119,14 +119,15 @@ async def refresh_token(redis: redis_client, refresh_token: str):
 
     return Token(access_token=access_token, token_type="bearer", refresh_token=new_refresh_token)
 
-async def revoke_refresh(redis: redis_client, refresh_token: str = Body(..., embed=True)):
+async def revoke_refresh_token(redis: redis_client, refresh_token: str):
     try:
         payload = decode_token(refresh_token)
         if payload.get("typ") != "refresh":
             return {"message": "No-op"}
         jti = payload.get("jti")
         if jti:
-            await revoke_refresh(redis, jti)
+            from app.core.auth.jwt import revoke_refresh as jwt_revoke_refresh
+            await jwt_revoke_refresh(redis, jti)
     except Exception:
         pass
 

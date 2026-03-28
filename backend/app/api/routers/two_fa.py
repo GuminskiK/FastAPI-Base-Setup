@@ -40,7 +40,7 @@ async def enable_2fa(user: current_active_user, session: db_session, code: str =
 @router.post("/disable")
 async def disable_2fa(user: current_active_user, session: db_session, code: str = Body(..., embed=True)):
     
-    result = await verify_and_disable()
+    result = await verify_and_disable(user, session, code)
     
     if result == Disable2FAResult.NOT_ENABLED:
         raise HTTPException(status_code=400, detail="2FA is not enabled")
