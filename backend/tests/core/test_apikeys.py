@@ -1,6 +1,4 @@
-from fastapi import HTTPException
 from app.core.auth.apikeys import generate_api_key_for_user, get_user_by_api_key, revoke_user_api_key
-from pytest import raises
 import pytest
 
 @pytest.mark.asyncio

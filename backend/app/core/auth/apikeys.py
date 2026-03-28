@@ -5,9 +5,7 @@ from app.models.Users import User
 from app.models.APIKeys import APIKey
 from sqlmodel import select
 import hashlib
-
 import secrets
-import hashlib
 import hmac
 
 def _hash_api_key(api_key: str) -> str:

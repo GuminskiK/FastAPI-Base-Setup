@@ -11,7 +11,7 @@ async def lifespan(app: FastAPI):
 
     from app.core.db import AsyncSessionLocal
     from app.core.config import settings
-    from app.models.Users import User, UserCreate, PlatformRole
+    from app.models.Users import User
     from sqlmodel import select
     from app.core.auth.utils import get_blind_index
     from app.core.auth.jwt import get_password_hash

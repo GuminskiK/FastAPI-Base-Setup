@@ -5,7 +5,8 @@ def test_post_good(client):
         json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword"}
     )
 
-    print("RESP:", response.json()); assert response.status_code == 201
+    print("RESP:", response.json())
+    assert response.status_code == 201
     assert response.json() == {"username": "TestUser", "email": "test@example.com"}
 
 def test_post_no_username(client):

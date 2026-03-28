@@ -1,5 +1,3 @@
-from app.main import app
-
 def get_auth_headers(client, username="TestUser", password="TestPassword"):
     client.post("/users", json={"username": username, "email": f"{username}@example.com", "plain_password": password})
     login_response = client.post("/auth/token", data={"username": username, "password": password})

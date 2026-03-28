@@ -1,5 +1,3 @@
-import pytest
-import time
 import pyotp
 
 def test_login_success(client):
@@ -94,7 +92,8 @@ def test_refresh_token(client):
         json={"refresh_token": refresh_token}
     )
     
-    print("RESP:", refresh_resp.json()); assert refresh_resp.status_code == 200
+    print("RESP:", refresh_resp.json())
+    assert refresh_resp.status_code == 200
     data = refresh_resp.json()
     assert "access_token" in data
     assert "refresh_token" in data
@@ -182,7 +181,8 @@ def test_get_sessions_and_logout_specific(client):
         "/auth/sessions?user_id=1",
         headers={"Authorization": f"Bearer {token1}"}
     )
-    print("SESS:", sessions_resp.json()); assert sessions_resp.status_code == 200
+    print("SESS:", sessions_resp.json())
+    assert sessions_resp.status_code == 200
     sessions = sessions_resp.json()
     
     # Should have 2 sessions

@@ -41,14 +41,10 @@ async def get_current_active_user( session: db_session, token: Optional[str] = D
         except JWTError:
             pass
             
-    print(f"Exception! Token was {token}"); raise credentials_exception
+    print(f"Exception! Token was {token}")
+    raise credentials_exception
 
 async def get_current_user( session: db_session, token: Optional[str] = Depends(oauth2_scheme), api_key: Optional[str] = Depends(api_key_header)) -> User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED, 
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     
     if api_key:
         user = await get_user_by_api_key(session, api_key)
