@@ -10,6 +10,10 @@ services:
       - DATABASE_URL=postgresql+asyncpg://user:password@db:5432/db
       - REDIS_URL=redis://redis:6379/0
       - APP_NAME=App
+      - SECRET_KEY=53bd75c62d71250aa002f0cff32cbe858661bb1159e15cdf454dd19b75a563f9
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=10
+      - REFRESH_TOKEN_EXPIRE_DAYS=14
     depends_on:
       - db
 

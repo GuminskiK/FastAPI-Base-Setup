@@ -3,10 +3,47 @@ from app.core.health import check_disk, check_db, check_redis
 from app.core.redis import redis_client
 from app.core.db import db_session
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routers import users
+from app.api.routers import users, auth, apikeys, two_fa
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    from app.core.db import AsyncSessionLocal
+    from app.core.config import settings
+    from app.models.Users import User
+    from sqlmodel import select
+    from app.core.auth.utils import get_blind_index
+    from app.core.auth.jwt import get_password_hash
+    async with AsyncSessionLocal() as session:
+        # Check if superuser exists
+        query = select(User).where(User.username == settings.FIRST_SUPERUSER)
+        result = await session.exec(query)
+        user = result.first()
+        
+        if not user:
+            print("Creating first superuser...")
+            superuser = User(
+                username=settings.FIRST_SUPERUSER,
+                email=f"{settings.FIRST_SUPERUSER}@example.com",
+                email_blind_index=get_blind_index(f"{settings.FIRST_SUPERUSER}@example.com"),
+                hashed_password=get_password_hash(settings.FIRST_SUPERUSER_PASSWORD),
+                is_superuser=True,
+                is_2fa_enabled=False 
+            )
+            session.add(superuser)
+            await session.commit()
+            print(f"Superuser '{settings.FIRST_SUPERUSER}' created.")
+        else:
+            print("Superuser already exists.")
+
+    yield
 
 app = FastAPI()
 app.include_router(users.router)
+app.include_router(auth.router)
+app.include_router(apikeys.router)
+app.include_router(two_fa.router)
 
 origins = [
     "http://localhost.tiangolo.com",

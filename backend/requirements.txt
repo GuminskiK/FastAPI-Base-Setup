@@ -5,3 +5,10 @@ asyncpg
 httpx
 pydantic-settings
 redis
+pyotp
+qrcode
+argon2-cffi
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart
+pillow

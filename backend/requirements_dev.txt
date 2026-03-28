@@ -8,3 +8,11 @@ redis
 pytest
 pytest-asyncio
 aiosqlite
+pyotp
+qrcode
+argon2-cffi
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart
+pytest-cov
+pillow
