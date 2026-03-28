@@ -1,5 +1,8 @@
 from sqlmodel import SQLModel, Field, Column, Relationship, JSON
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .APIKeys import APIKey
 
 class UserBase(SQLModel):
     username: str = Field(index=True, unique=True)

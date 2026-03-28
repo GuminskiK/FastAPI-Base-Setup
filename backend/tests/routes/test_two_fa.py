@@ -1,4 +1,3 @@
-import pytest
 import pyotp
 
 def get_auth_headers(client, username="TestUser", password="TestPassword"):
