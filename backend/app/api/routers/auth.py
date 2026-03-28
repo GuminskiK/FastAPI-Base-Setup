@@ -1,22 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Body, Request, Form
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-from app.core.auth.jwt import (
-    verify_password,
-    create_access_token,
-    create_refresh_token,
-    decode_token,
-    is_refresh_valid,
-    revoke_refresh,
-    store_refresh_token,
-    revoke_all_user_sessions,
-)
-import logging
-import time
 from app.core.db import db_session
-from app.services.users import get_user_by_username
 from app.core.redis import redis_client
 from app.models.Tokens import Token
-from app.services.users import current_user, owner_or_admin
+from app.services.users import owner_or_admin
 from app.services.auth_service import (
     login_token,
     refresh_token as refresh_token_service,
@@ -27,7 +14,6 @@ from app.services.auth_service import (
     RefreshTokenResult,
     DeleteSessionResult,
 )
-import pyotp
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])

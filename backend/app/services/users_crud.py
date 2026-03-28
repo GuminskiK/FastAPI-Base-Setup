@@ -2,7 +2,7 @@ from app.core.db import db_session
 from sqlmodel import select
 from app.models.Users import User, UserUpdate
 from fastapi import HTTPException
-from app.services.users import get_user_by_username, get_user_by_email
+from app.services.users import get_user_by_email
 from app.core.auth.utils import get_blind_index
 from app.core.auth.jwt import get_password_hash
 

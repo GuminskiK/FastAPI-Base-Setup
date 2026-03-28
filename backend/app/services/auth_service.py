@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Body, Request, Form
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi import Depends, Request, Form
+from fastapi.security import OAuth2PasswordRequestForm
 from app.core.auth.jwt import (
     verify_password,
     create_access_token,
@@ -16,7 +16,7 @@ from app.core.db import db_session
 from app.services.users import get_user_by_username
 from app.core.redis import redis_client
 from app.models.Tokens import Token
-from app.services.users import current_user, owner_or_admin
+from app.services.users import owner_or_admin
 import pyotp
 from enum import Enum
 

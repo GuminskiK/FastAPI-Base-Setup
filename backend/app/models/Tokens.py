@@ -1,6 +1,4 @@
-from sqlmodel import SQLModel, Field
-from app.models.Users import User
-from datetime import datetime
+from sqlmodel import SQLModel
 from pydantic import ConfigDict
 
 class Token(SQLModel):

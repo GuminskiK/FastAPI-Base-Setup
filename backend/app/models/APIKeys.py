@@ -1,7 +1,6 @@
-from sqlmodel import SQLModel, Field, Column, Relationship
+from sqlmodel import SQLModel, Field, Relationship
 from app.models.Users import User
 from datetime import datetime, timezone
-from pydantic import ConfigDict
 
 from datetime import datetime
 from typing import Optional
