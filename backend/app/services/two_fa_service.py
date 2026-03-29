@@ -7,6 +7,7 @@ from enum import Enum
 from app.models.Users import User
 from app.core.db import db_session 
 from app.core.config import settings
+from app.core.logger import get_logger
 
 class Setup2FAResult(Enum):
     SUCCESS = "success"
@@ -23,7 +24,6 @@ class Disable2FAResult(Enum):
     NOT_ENABLED = "not_enabled"
     INVALID_CODE = "invalid_code"
 
-from app.core.logger import get_logger
 logger = get_logger(__name__)
 
 async def generate_setup_data(user: User, session: db_session) -> dict | Setup2FAResult:

@@ -42,10 +42,10 @@ def setup_logging(json_logs: bool = False, log_level: str = "INFO"):
     
     # Configure Fastapi/Uvicorn loggers to use the same handler
     for _log in ("uvicorn", "uvicorn.error", "uvicorn.access", "fastapi"):
-        l = logging.getLogger(_log)
-        l.handlers.clear()
-        l.addHandler(handler)
-        l.propagate = False
+        log = logging.getLogger(_log)
+        log.handlers.clear()
+        log.addHandler(handler)
+        log.propagate = False
 
     structlog.configure(
         processors=processors,
