@@ -23,8 +23,12 @@ class Disable2FAResult(Enum):
     NOT_ENABLED = "not_enabled"
     INVALID_CODE = "invalid_code"
 
+from app.core.logger import get_logger
+logger = get_logger(__name__)
+
 async def generate_setup_data(user: User, session: db_session) -> dict | Setup2FAResult:
     if user.is_totp_enabled:
+        logger.info("2fa_setup_already_enabled", user_id=str(user.id))
         return Setup2FAResult.ALREADY_ENABLED
         
     secret = pyotp.random_base32()
@@ -43,6 +47,7 @@ async def generate_setup_data(user: User, session: db_session) -> dict | Setup2F
     session.add(user)
     await session.commit()
     
+    logger.info("2fa_setup_data_generated", user_id=str(user.id))
     return {
         "secret": secret,
         "qr_code_base64": f"data:image/png;base64,{qr_b64}",

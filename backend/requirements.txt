@@ -12,3 +12,6 @@ passlib[bcrypt]
 python-jose[cryptography]
 python-multipart
 pillow
+structlog
+asgi-correlation-id
+python-json-logger

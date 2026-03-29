@@ -15,7 +15,6 @@ from app.services.auth_service import (
     DeleteSessionResult,
 )
 
-
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -51,9 +50,6 @@ async def post_refresh_token(redis: redis_client, refresh_token: str = Body(...,
     
     if result == RefreshTokenResult.WRONG_TOKEN_TYPE:
         raise HTTPException(status_code=401, detail="Wrong token type")
-    
-    if result == RefreshTokenResult.INVALID_TOKEN:
-        raise HTTPException(status_code=401, detail="Invalid token")
 
     if result == RefreshTokenResult.REFRESH_TOKEN_REUSE:
         raise HTTPException(status_code=401, detail="Refresh token reuse detected; all sessions revoked")
@@ -67,14 +63,12 @@ async def post_refresh_token(redis: redis_client, refresh_token: str = Body(...,
 async def logout(redis: redis_client, refresh_token: str = Body(..., embed=True)):
     
     result = await logout_service(redis, refresh_token)
-
     return result
 
 @router.get("/sessions")
 async def get_auth_sessions(redis: redis_client, user: owner_or_admin):
     
     result = await fetch_auth_sessions(redis, user)
-
     return result
 
 @router.post("/logout/{sid}")
@@ -84,3 +78,5 @@ async def logout_with_session_id(redis: redis_client, user: owner_or_admin, sid:
 
     if result == DeleteSessionResult.SESSION_NOT_FOUND:
         raise HTTPException(status_code=404, detail="session not found")
+
+    return result
