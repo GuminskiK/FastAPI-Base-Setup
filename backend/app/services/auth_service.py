@@ -13,14 +13,14 @@ from app.core.auth.jwt import (
 from app.core.logger import get_logger
 import time
 from app.core.db import db_session
-
-logger = get_logger(__name__)
 from app.services.users import get_user_by_username
 from app.core.redis import redis_client
 from app.models.Tokens import Token
 from app.services.users import owner_or_admin
 import pyotp
 from enum import Enum
+
+logger = get_logger(__name__)
 
 class LoginTokenResult(Enum):
     SUCCESS = "success"

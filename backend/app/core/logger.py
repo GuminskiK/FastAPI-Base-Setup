@@ -1,7 +1,7 @@
 import logging
 import structlog
 import sys
-from structlog.types import EventDict, Processor
+from structlog.types import Processor
 
 def setup_logging(json_logs: bool = False, log_level: str = "INFO"):
     timestamper = structlog.processors.TimeStamper(fmt="iso")
