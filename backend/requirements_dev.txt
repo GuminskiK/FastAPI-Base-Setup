@@ -16,3 +16,6 @@ python-jose[cryptography]
 python-multipart
 pytest-cov
 pillow
+structlog
+asgi-correlation-id
+python-json-logger
