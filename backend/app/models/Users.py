@@ -28,7 +28,10 @@ class UserCreate(UserBase):
     plain_password: str
 
 class UserRead(UserBase):
-    pass
+    id: int
+    is_superuser: bool
+    is_activated: bool
+    is_totp_enabled: bool
 
 class UserUpdate(SQLModel):
     username: Optional[str] = None
