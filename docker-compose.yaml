@@ -48,6 +48,35 @@ services:
     ports:
       - "8025:8025" # UI w przeglądarce pod adresem http://localhost:8025
       - "1025:1025" # Nasz serwer wpisany w configu (SMTP PORT)
+  
+  init-certs:
+    image: alpine/openssl
+    container_name: init_certs
+    entrypoint: /bin/sh
+    volumes:
+      - ./nginx/certs:/certs
+    command: >
+      -c "if [ ! -f /certs/server.crt ]; then
+              echo 'Generating self-signed certificate...';
+              openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /certs/server.key -out /certs/server.crt -subj '/CN=localhost';
+              chmod 644 /certs/server.key /certs/server.crt;
+            else
+              echo 'Certificate already exists.';
+            fi"
+
+  nginx:
+    image: nginx:latest
+    container_name: creatorhub_nginx
+    ports:
+      - "8080:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - frontend_static:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+      - init-certs
 
 volumes:
   postgres_data:

@@ -7,6 +7,10 @@ from app.api.routers import users, auth, apikeys, two_fa
 from contextlib import asynccontextmanager
 from app.core.logger import setup_logging
 from app.core.logging_middleware import StructlogMiddleware
+from app.core.rate_limiting import limiter
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 # Initialize structural logging globally
 setup_logging(json_logs=False, log_level="INFO")  # SET json_logs=True for Sentry/Loki!
@@ -52,6 +56,10 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan)
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(StructlogMiddleware)
 

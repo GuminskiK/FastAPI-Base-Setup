@@ -19,11 +19,13 @@ from app.services.auth_service import (
     change_password, ChangePasswordResult
 )
 from app.models.Users import UserRead
+from app.core.rate_limiting import limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 @router.post("/token", response_model=Token)
+@limiter.limit("20/hour")
 async def post_token(
     request: Request,
     redis: redis_client,

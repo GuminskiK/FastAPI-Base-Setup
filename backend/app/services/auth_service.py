@@ -24,6 +24,8 @@ from enum import Enum
 from app.core.config import settings
 from datetime import timedelta
 from app.services.email_service import send_password_reset_email
+import asyncio
+from passlib.context import CryptContext
 
 logger = get_logger(__name__)
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
@@ -69,6 +71,9 @@ class ChangePasswordResult(Enum):
     WRONG_TOKEN_TYPE = "wrong_token_type"
     USER_NOT_FOUND = "user_not_found"
 
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+DUMMY_HASH = pwd_context.hash("dummy_password")
+
 async def login_token(
     request: Request,
     redis: redis_client,
@@ -76,8 +81,15 @@ async def login_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     mfa_code: str | None = Form(default=None)):
 
+    await asyncio.sleep(1)
+
     user = await get_user_by_username(session, form_data.username)
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    if not user:
+        verify_password(form_data.password, DUMMY_HASH)
+        logger.warning("invalid_user_login_attempt", username=form_data.username)
+        return LoginTokenResult.INVALID_CREDENTIALS
+    
+    if not verify_password(form_data.password, user.hashed_password):
         logger.warning("invalid_credentials_attempt", username=form_data.username)
         return LoginTokenResult.INVALID_CREDENTIALS
 

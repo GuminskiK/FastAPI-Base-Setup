@@ -16,3 +16,4 @@ structlog
 asgi-correlation-id
 python-json-logger
 fastapi-mail
+slowapi
