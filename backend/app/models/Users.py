@@ -1,16 +1,19 @@
 from sqlmodel import SQLModel, Field, Column, Relationship, JSON
 from typing import Optional, List, TYPE_CHECKING
 
+from pydantic import EmailStr
+
 if TYPE_CHECKING:
     from .APIKeys import APIKey
 
 class UserBase(SQLModel):
     username: str = Field(index=True, unique=True)
-    email: str = Field(unique=True)
+    email: EmailStr = Field(unique=True)
 
 class User(UserBase, table=True):
     id: int | None = Field(default= None, primary_key=True)
     is_superuser: bool = Field(default = False)
+    is_activated: bool = Field(default = False)
     
     hashed_password: str = Field()
     email_blind_index: str
@@ -25,7 +28,10 @@ class UserCreate(UserBase):
     plain_password: str
 
 class UserRead(UserBase):
-    pass
+    id: int
+    is_superuser: bool
+    is_activated: bool
+    is_totp_enabled: bool
 
 class UserUpdate(SQLModel):
     username: Optional[str] = None

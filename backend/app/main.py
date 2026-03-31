@@ -14,19 +14,24 @@ setup_logging(json_logs=False, log_level="INFO")  # SET json_logs=True for Sentr
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
-    from app.core.db import AsyncSessionLocal
+    from app.core.db import AsyncSessionLocal, engine
     from app.core.config import settings
     from app.models.Users import User
-    from sqlmodel import select
+    from sqlmodel import select, SQLModel
     from app.core.auth.utils import get_blind_index
     from app.core.auth.jwt import get_password_hash
-    async with AsyncSessionLocal() as session:
-        try:
+    
+    # Utworzenie wszystkich tabel przez engine
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(SQLModel.metadata.create_all)
+
+        async with AsyncSessionLocal() as session:
             # Check if superuser exists
             query = select(User).where(User.username == settings.FIRST_SUPERUSER)
             result = await session.exec(query)
             user = result.first()
-            
+
             if not user:
                 print("Creating first superuser...")
                 superuser = User(
@@ -35,16 +40,15 @@ async def lifespan(app: FastAPI):
                     email_blind_index=get_blind_index(f"{settings.FIRST_SUPERUSER}@example.com"),
                     hashed_password=get_password_hash(settings.FIRST_SUPERUSER_PASSWORD),
                     is_superuser=True,
-                    is_2fa_enabled=False 
+                    is_2fa_enabled=False
                 )
                 session.add(superuser)
                 await session.commit()
-                print(f"Superuser '{settings.FIRST_SUPERUSER}' created.")
+                print(f"Superuser '{settings.FIRST_SUPERUSER}' created.")       
             else:
                 print("Superuser already exists.")
-        except Exception as e:
-            print(f"Skipping superuser creation, DB likely not initialized: {e}")
-
+    except Exception as e:
+        print(f"Skipping DB init / superuser creation, DB likely not initialized or unreachable (e.g. Test Mode): {e}")
     yield
 
 app = FastAPI(lifespan=lifespan)

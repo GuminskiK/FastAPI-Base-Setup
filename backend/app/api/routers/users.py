@@ -1,102 +1,98 @@
-from fastapi import APIRouter, HTTPException
-from sqlmodel import select
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from app.core.db import db_session
-from app.models.Users import User, UserRead, UserUpdate, UserCreate
-from app.core.auth.jwt import get_password_hash
-from app.services.users import get_user_by_username, get_user_by_email
-from app.core.auth.utils import get_blind_index
+from app.models.Users import UserRead, UserUpdate, UserCreate
 from typing import List
 from app.services.users import current_admin_user, current_active_user
-from app.services.users_crud import delete_user_db, patch_user_db
+from app.services.users_crud import (
+    remove_user, RemoveUserResult,
+    update_user, UpdateUserResult,
+    fetch_user, FetchUserResult,
+    fetch_all_users,
+    create_user, CreateUserResult)
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 @router.post("", response_model=UserRead, status_code=201)
-async def post_user(session: db_session, user: UserCreate):
+async def post_user(session: db_session, user: UserCreate, background_tasks: BackgroundTasks):
 
-    if await get_user_by_username(session, user.username):
+    result = await create_user(session, user, background_tasks)
+
+    if result == CreateUserResult.USERNAME_TAKEN:
         raise HTTPException(
             status_code = 400,
             detail = "Username already registered"
         )
     
-    if await get_user_by_email(session, user.email):
+    if result == CreateUserResult.EMAIL_ALREADY_REGISTERED:
         raise HTTPException(
             status_code = 400,
             detail = "Email already registered"
         )
-        
-    hashed = get_password_hash(user.plain_password)
-    
-    user_data = user.model_dump(exclude={"plain_password"})
-    email_blind_index = get_blind_index(user_data["email"])
-    
-    db_user = User(
-        **user_data, 
-        hashed_password=hashed,
-        email_blind_index=email_blind_index
-    )
-    session.add(db_user)
-    await session.commit()
-    await session.refresh(db_user)
 
-    return db_user
+    return result
 
 @router.get("/{user_id}", response_model=UserRead)
 async def get_user(session: db_session, user_id: int, admin: current_admin_user):
 
-    result = await session.exec(select(User).where(User.id == user_id))
-    user = result.one_or_none()
+    result = await fetch_user(session, user_id)
 
-    if not user:
+    if result == FetchUserResult.USER_NOT_FOUND:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return user
+    return result
 
 @router.get("", response_model=List[UserRead])
 async def get_all_users(session: db_session, admin: current_admin_user):
 
-    result = await session.exec(select(User))
-    users = result.all()
+    result = await fetch_all_users(session)
 
-    if not users:
+    if result == FetchUserResult.USER_NOT_FOUND:
         raise HTTPException(status_code=404, detail="Users not found")
     
-    return users
+    return result
 
 @router.patch("/{user_id}", response_model=UserRead)
 async def patch_user_admin(session: db_session, user: UserUpdate, user_id: int, admin: current_admin_user):
 
-    return await patch_user_db(session, user, user_id)
+    result = await update_user(session, user, user_id)
+
+    if result == UpdateUserResult.USER_NOT_FOUND:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if result == UpdateUserResult.EMAIL_ALREADY_REGISTERED:
+        raise HTTPException(status_code = 400, detail = "Email already registered")
+
+    return result
 
 @router.patch("/me", response_model=UserRead)
 async def patch_user(session: db_session, user: UserUpdate, current_user: current_active_user):
     
-    return await patch_user_db(session, user, current_user.id)
+    result = await update_user(session, user, current_user.id)
+
+    if result == UpdateUserResult.USER_NOT_FOUND:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if result == UpdateUserResult.EMAIL_ALREADY_REGISTERED:
+        raise HTTPException(status_code = 400, detail = "Email already registered")
+
+    return result
 
 @router.delete("/{user_id}", response_model=UserRead)
 async def delete_user_admin(session: db_session, user_id: int, admin: current_admin_user):
 
-    return await delete_user_db(session, user_id)
+    result = await remove_user(session, user_id)
+
+    if result == RemoveUserResult.USER_NOT_FOUND:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return result
 
 @router.delete("/me", response_model=UserRead)
 async def delete_user(session: db_session, user: current_active_user):
 
-    return await delete_user_db(session, user.id)
+    result = await remove_user(session, user.id)
 
-
-@router.patch("/change_super_user_status/{user_id}")
-async def change_super_user_status(session: db_session, user_id: int, admin: current_admin_user):
-
-    result = await session.exec(select(User).where(User.id == user_id))
-    db_user = result.one_or_none()
-
-    if not db_user:
+    if result == RemoveUserResult.USER_NOT_FOUND:
         raise HTTPException(status_code=404, detail="User not found")
-    
-    db_user.is_superuser = True
-    session.add(db_user)
-    await session.commit()
-    await session.refresh(db_user)
 
-    return db_user
+    return result
