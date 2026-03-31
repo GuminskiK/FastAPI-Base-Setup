@@ -6,7 +6,7 @@ async def test_api_key_for_user_flow(client, db_session):
 
     client.post(
         "/users", 
-        json={ "username": "TestUser", "email": "mymail@gmail.com", "plain_password": "TestPassword"}
+        json={ "username": "TestUser", "email": "mymail@gmail.com", "plain_password": "TestPassword1!"}
     )
 
     apikey = await generate_api_key_for_user(db_session, 1, "MyKey")

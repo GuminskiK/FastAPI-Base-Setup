@@ -2,7 +2,7 @@ def test_post_good(client):
     
     response = client.post(
         "/users", 
-        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword"}
+        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword1!"}
     )
 
     print("RESP:", response.json())
@@ -19,7 +19,7 @@ def test_post_no_username(client):
 
     response = client.post(
         "/users",
-        json={"plain_password": "TestPassword"}
+        json={"plain_password": "TestPassword1!"}
     )
 
     assert response.status_code == 422
@@ -30,7 +30,7 @@ def test_get_user_ok(client, override_admin):
 
     client.post(
         "/users",
-        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword"}
+        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword1!"}
     )
 
     response = client.get("/users/1")
@@ -55,12 +55,12 @@ def test_get_all_users(client, override_admin):
 
     client.post(
         "/users",
-        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword"}
+        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword1!"}
     )
 
     client.post(
         "/users",
-        json={ "username": "TestUser2", "email": "test2@example.com", "plain_password": "TestPassword"}
+        json={ "username": "TestUser2", "email": "test2@example.com", "plain_password": "TestPassword1!"}
     )
 
     response = client.get("/users")
@@ -82,7 +82,7 @@ def test_patch_user_ok(client, override_admin):
 
     client.post(
         "/users",
-        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword"}
+        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword1!"}
     )
 
     response = client.patch(
@@ -110,7 +110,7 @@ def test_patch_unknown_field(client, override_admin):
 
     client.post(
         "/users", 
-        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword"}
+        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword1!"}
     )
 
     response = client.patch(
@@ -124,7 +124,7 @@ def test_delete_user(client, override_admin):
 
     client.post(
         "/users",
-        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword"}
+        json={ "username": "TestUser", "email": "test@example.com", "plain_password": "TestPassword1!"}
     )
 
     response = client.delete(
