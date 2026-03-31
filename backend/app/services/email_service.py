@@ -42,3 +42,28 @@ async def send_activation_email(email_to: EmailStr, token: str):
         logger.info("activation_email_sent_successfully", email=email_to)
     except Exception as e:
         logger.error("failed_to_send_activation_email", error=str(e), email=email_to)
+
+async def send_password_reset_email(email_to: EmailStr, token: str):
+    reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+
+    html_body = f"""
+    <h3>Witaj!</h3>
+    <p>Otrzymaliśmy prośbę o zmianę hasła dla Twojego konta.</p>
+    <p>Kliknij w poniższy link, aby je zresetować:</p>
+    <p><a href="{reset_link}">{reset_link}</a></p>
+    <br>
+    <p>Jeśli to nie Ty prosiłeś o zmianę, zignoruj tę wiadomość. Link wygaśnie po godzinie.</p>
+    """
+
+    message = MessageSchema(
+        subject="Reset hasła",
+        recipients=[email_to],
+        body=html_body,
+        subtype=MessageType.html
+    )
+
+    try:
+        await fm.send_message(message)
+        logger.info("password_reset_email_sent_successfully", email=email_to)
+    except Exception as e:
+        logger.error("failed_to_send_password_reset_email", error=str(e), email=email_to)

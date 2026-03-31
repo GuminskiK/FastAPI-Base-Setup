@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Body, Request, Form
+from fastapi import APIRouter, Depends, HTTPException, status, Body, Request, Form, BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from app.core.db import db_session
 from app.core.redis import redis_client
@@ -15,7 +15,9 @@ from app.services.auth_service import (
     RefreshTokenResult,
     DeleteSessionResult,
     change_superuser_status, ChangeSuperuserStatusResult,
-    change_account_status, ActivateTokenResult
+    change_account_status, ActivateTokenResult,
+    send_change_password_mail,
+    change_password, ChangePasswordResult
 )
 from app.models.Users import UserRead
 
@@ -109,4 +111,43 @@ async def patch_superuser_status(session: db_session, user_id: int, admin: curre
     if result == ChangeSuperuserStatusResult.USER_NOT_FOUND:
         raise HTTPException(status_code=404, detail="User not found")
     
+    return result
+
+@router.post("/forgot_password")
+async def forgot_password(session: db_session, background_tasks: BackgroundTasks, email: str = Body(..., embed=True)):
+
+    await send_change_password_mail(session, email, background_tasks)
+
+    return {"message": "Jeśli to konto instnieje, wysłaliśmy instrukcje resetu hasła na wskazany adres e-mail."}
+
+@router.patch("/change_password/{password_change_token}")
+async def patch_password(session: db_session, password_change_token: str, plain_password: str = Body(..., embed=True)):
+
+    result = await change_password(session, password_change_token, plain_password)
+    
+    if result == ChangePasswordResult.INVALID_TOKEN:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    if result == ChangePasswordResult.WRONG_TOKEN_TYPE:
+        raise HTTPException(status_code=401, detail="Wrong token type")
+
+    if result == ChangePasswordResult.USER_NOT_FOUND:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {"message": "Hasło zostało pomyślnie zmienione."}
+
+@router.patch("/activate/{activate_token}", response_model=UserRead)
+async def activate_account(session: db_session, activate_token: str):
+
+    result = await change_account_status(session, activate_token)
+
+    if result == ActivateTokenResult.INVALID_TOKEN:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    if result == ActivateTokenResult.WRONG_TOKEN_TYPE:
+        raise HTTPException(status_code=401, detail="Wrong token type")
+
+    if result == ActivateTokenResult.USER_NOT_FOUND:
+        raise HTTPException(status_code=404, detail="User not found")
+
     return result
