@@ -1,4 +1,8 @@
 import pyotp
+from unittest.mock import patch
+from datetime import timedelta
+from app.core.auth.jwt import create_token
+from app.models.Tokens import TokenTypes
 
 def test_login_success(client):
     # Setup user
@@ -205,3 +209,59 @@ def test_get_sessions_and_logout_specific(client):
     )
     sessions2 = sessions_resp2.json()
     assert not any(s["device"] == "TestDevice 2" for s in sessions2)
+
+@patch("app.services.email_service.fm.send_message")
+def test_activate_account(mock_send_message, client):
+    # 1. Create a User
+    # W mocku blokujemy faktyczną próbę nawiązania po TCP z serwerem w testach
+    resp = client.post(
+        "/users",
+        json={"username": "ActivationTestUser", "email": "activate@example.com", "plain_password": "password123"}
+    )
+    assert resp.status_code == 201
+    
+    user_data = resp.json()
+    user_id = user_data["id"]
+    assert user_data["is_activated"] is False
+
+    # 2. Generowanie poprawnego tokenu (tak samo jak kod dziala w tle)
+    activation_token = create_token(user_id, "ActivationTestUser", TokenTypes.ACTIVATE, timedelta(days=1))
+
+    # 3. Próba aktywacji konta tokenem
+    activate_resp = client.patch(f"/auth/activate/{activation_token}")
+    
+    assert activate_resp.status_code == 200
+    assert activate_resp.json()["is_activated"] is True
+
+@patch("app.services.email_service.fm.send_message")
+def test_change_password_flow(mock_send_message, client):
+    # 1. Setup User
+    user_resp = client.post(
+        "/users",
+        json={"username": "PassUser", "email": "pass@example.com", "plain_password": "OldPassword"}
+    )
+    user_id = user_resp.json()["id"]
+
+    # 2. Request Password Reset (Forgot Password)
+    forgot_resp = client.post("/auth/forgot_password", json={"email": "pass@example.com"})
+    assert forgot_resp.status_code == 200
+    assert "Jeśli to konto instnieje" in forgot_resp.json()["message"]
+    
+    # 3. Zbudowanie poprawnego tokenu resetujacego
+    reset_token = create_token(user_id, "PassUser", TokenTypes.CHANGE_PASSWORD, timedelta(minutes=60))
+
+    # 4. Wykorzystanie go na endpoincie zmiany hasla
+    new_password = "NewSuperPassword123"
+    change_resp = client.patch(f"/auth/change_password/{reset_token}", json={"plain_password": new_password})
+    
+    assert change_resp.status_code == 200
+    assert "Hasło zostało pomyślnie zmienione" in change_resp.json()["message"]
+
+    # 5. Weryfikacja (Logowanie Starym haslem musi byc odrzucone)
+    fail_login = client.post("/auth/token", data={"username": "PassUser", "password": "OldPassword"})
+    assert fail_login.status_code == 401
+    
+    # 6. Weryfikacja (Logowanie Nowym haslem dziala)
+    success_login = client.post("/auth/token", data={"username": "PassUser", "password": new_password})
+    assert success_login.status_code == 200
+    assert "access_token" in success_login.json()
