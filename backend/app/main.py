@@ -22,16 +22,16 @@ async def lifespan(app: FastAPI):
     from app.core.auth.jwt import get_password_hash
     
     # Utworzenie wszystkich tabel przez engine
-    async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
-        
-    async with AsyncSessionLocal() as session:
-        try:
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(SQLModel.metadata.create_all)
+
+        async with AsyncSessionLocal() as session:
             # Check if superuser exists
             query = select(User).where(User.username == settings.FIRST_SUPERUSER)
             result = await session.exec(query)
             user = result.first()
-            
+
             if not user:
                 print("Creating first superuser...")
                 superuser = User(
@@ -40,16 +40,15 @@ async def lifespan(app: FastAPI):
                     email_blind_index=get_blind_index(f"{settings.FIRST_SUPERUSER}@example.com"),
                     hashed_password=get_password_hash(settings.FIRST_SUPERUSER_PASSWORD),
                     is_superuser=True,
-                    is_2fa_enabled=False 
+                    is_2fa_enabled=False
                 )
                 session.add(superuser)
                 await session.commit()
-                print(f"Superuser '{settings.FIRST_SUPERUSER}' created.")
+                print(f"Superuser '{settings.FIRST_SUPERUSER}' created.")       
             else:
                 print("Superuser already exists.")
-        except Exception as e:
-            print(f"Skipping superuser creation, DB likely not initialized: {e}")
-
+    except Exception as e:
+        print(f"Skipping DB init / superuser creation, DB likely not initialized or unreachable (e.g. Test Mode): {e}")
     yield
 
 app = FastAPI(lifespan=lifespan)

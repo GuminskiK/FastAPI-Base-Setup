@@ -10,7 +10,7 @@ REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 exp = 1000
 
 def test_create_access_token():
-    encoded_token = create_token("TestUser", 1, TokenTypes.ACCESS, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    encoded_token = create_token(1, "TestUser", TokenTypes.ACCESS, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     token = decode_token(encoded_token)
     assert token["sub"] == "TestUser"
     assert token["id"] == 1
@@ -18,9 +18,9 @@ def test_create_access_token():
     assert token["aud"] == APP_NAME + "-api"
     assert "jti" in token
     assert token["typ"] == TokenTypes.ACCESS
-    
+
 def test_create_refresh_token():
-    encoded_token = create_token("TestUser", 1, TokenTypes.REFRESH, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
+    encoded_token = create_token(1, "TestUser", TokenTypes.REFRESH, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
     token = decode_token(encoded_token)
     assert token["sub"] == "TestUser"
     assert token["id"] == 1
