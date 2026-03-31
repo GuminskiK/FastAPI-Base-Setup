@@ -14,12 +14,19 @@ setup_logging(json_logs=False, log_level="INFO")  # SET json_logs=True for Sentr
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
-    from app.core.db import AsyncSessionLocal
+    from app.core.db import AsyncSessionLocal, engine
     from app.core.config import settings
     from app.models.Users import User
-    from sqlmodel import select
+    from app.models.APIKeys import APIKey
+    from app.models.Tokens import Token
+    from sqlmodel import select, SQLModel
     from app.core.auth.utils import get_blind_index
     from app.core.auth.jwt import get_password_hash
+    
+    # Utworzenie wszystkich tabel przez engine
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
+        
     async with AsyncSessionLocal() as session:
         try:
             # Check if superuser exists

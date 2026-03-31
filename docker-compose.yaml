@@ -14,7 +14,12 @@ services:
       - ALGORITHM=HS256
       - ACCESS_TOKEN_EXPIRE_MINUTES=10
       - REFRESH_TOKEN_EXPIRE_DAYS=14
+      - ACTIVATE_TOKEN_EXPIRE_DAYS=1
+      - PASSWORD_RESET_TOKEN_EXPIRE_MINUTES=60
       - FIRST_SUPERUSER="admin"
+      - MAIL_SERVER=mailpit # tu wpisujesz nazwę serwisu zamiast localhost
+      - MAIL_PORT=1025
+      - FRONTEND_URL=http://localhost:3000
     depends_on:
       - db
 
@@ -36,6 +41,13 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: mailpit
+    ports:
+      - "8025:8025" # UI w przeglądarce pod adresem http://localhost:8025
+      - "1025:1025" # Nasz serwer wpisany w configu (SMTP PORT)
 
 volumes:
   postgres_data:

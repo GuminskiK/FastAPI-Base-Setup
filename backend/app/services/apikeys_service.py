@@ -8,8 +8,8 @@ from app.models.APIKeys import APIKey
 from app.core.logger import get_logger
 logger = get_logger(__name__)
 
-class CreateApikeyResult(Enum):
-    SUCCESS = "sucess",
+class CreateApikeyResult(str, Enum):
+    SUCCESS = "sucess"
     ADMIN = "admin"
 
 async def validate_and_create_apikey(user: User, session: db_session, name: str):

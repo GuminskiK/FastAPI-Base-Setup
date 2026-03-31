@@ -12,6 +12,11 @@ from sqlmodel import select
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
+async def get_user_by_id(session: db_session, id: int) -> User | None:
+    result = await session.exec(select(User).where(User.id == id))
+    user = result.one_or_none()
+    return user
+
 async def get_user_by_username(session: db_session, username: str) -> User | None:
     result = await session.exec(select(User).where(User.username == username))
     user = result.one_or_none()

@@ -1,29 +1,33 @@
-from app.core.auth.jwt import create_access_token, _now, create_refresh_token, decode_token, store_refresh_token, revoke_refresh, is_refresh_valid, revoke_all_user_sessions, _hash_jti
+from app.core.auth.jwt import create_token, _now, decode_token, store_refresh_token, revoke_refresh, is_refresh_valid, revoke_all_user_sessions, _hash_jti
 from app.core.config import settings
+from app.models.Tokens import TokenTypes
+from datetime import timedelta
 import pytest
 
 APP_NAME = settings.APP_NAME
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 exp = 1000
 
 def test_create_access_token():
-    encoded_token = create_access_token("TestUser", 1)
+    encoded_token = create_token("TestUser", 1, TokenTypes.ACCESS, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     token = decode_token(encoded_token)
     assert token["sub"] == "TestUser"
     assert token["id"] == 1
     assert token["iss"] == APP_NAME
     assert token["aud"] == APP_NAME + "-api"
     assert "jti" in token
-    assert token["typ"] == "access"
+    assert token["typ"] == TokenTypes.ACCESS
     
 def test_create_refresh_token():
-    encoded_token = create_refresh_token("TestUser", 1)
+    encoded_token = create_token("TestUser", 1, TokenTypes.REFRESH, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
     token = decode_token(encoded_token)
     assert token["sub"] == "TestUser"
     assert token["id"] == 1
     assert token["iss"] == APP_NAME
     assert token["aud"] == APP_NAME + "-api"
     assert "jti" in token
-    assert token["typ"] == "refresh"
+    assert token["typ"] == TokenTypes.REFRESH
 
 class FakeAsyncRedis:
     def __init__(self):

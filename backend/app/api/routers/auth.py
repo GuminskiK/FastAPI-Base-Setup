@@ -3,17 +3,21 @@ from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from app.core.db import db_session
 from app.core.redis import redis_client
 from app.models.Tokens import Token
-from app.services.users import owner_or_admin
+from app.services.users import owner_or_admin, current_admin_user
 from app.services.auth_service import (
     login_token,
     refresh_token as refresh_token_service,
     revoke_refresh_token as logout_service,
     fetch_auth_sessions,
     delete_session,
+    change_account_status,
     LoginTokenResult,
     RefreshTokenResult,
     DeleteSessionResult,
+    change_superuser_status, ChangeSuperuserStatusResult,
+    change_account_status, ActivateTokenResult
 )
+from app.models.Users import UserRead
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -79,4 +83,30 @@ async def logout_with_session_id(redis: redis_client, user: owner_or_admin, sid:
     if result == DeleteSessionResult.SESSION_NOT_FOUND:
         raise HTTPException(status_code=404, detail="session not found")
 
+    return result
+
+@router.patch("/activate/{activate_token}", response_model=UserRead)
+async def activate_account(session: db_session, activate_token: str):
+
+    result = await change_account_status(session, activate_token)
+
+    if result == ActivateTokenResult.INVALID_TOKEN:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    if result == ActivateTokenResult.WRONG_TOKEN_TYPE:
+        raise HTTPException(status_code=401, detail="Wrong token type")
+
+    if result == ActivateTokenResult.USER_NOT_FOUND:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return result
+
+@router.patch("/change_superuser_status/{user_id}", response_model=UserRead)
+async def patch_superuser_status(session: db_session, user_id: int, admin: current_admin_user):
+
+    result = await change_superuser_status(session, user_id)
+
+    if result == ChangeSuperuserStatusResult.USER_NOT_FOUND:
+        raise HTTPException(status_code=404, detail="User not found")
+    
     return result

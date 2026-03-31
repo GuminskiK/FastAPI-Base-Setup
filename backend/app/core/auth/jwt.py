@@ -38,35 +38,26 @@ def get_password_hash(plain: str) -> str:
     return pwd_context.hash(plain)
 
 
-def create_access_token(username: str, id: int, expires_delta: timedelta | None = None) -> str:
-    expire = _now() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+def create_token(
+    user_id: int, 
+    username: str,
+    token_type: str, 
+    expires_delta: timedelta
+) -> str:
+    expire = _now() + expires_delta
     jti = str(uuid.uuid4())
+    
     to_encode = {
-        "sub": username,
-        "id": id,
+        "id": user_id,
         "iat": int(_now().timestamp()),
         "exp": int(expire.timestamp()),
         "iss": APP_NAME,
         "aud": APP_NAME + "-api",
         "jti": jti,
-        "typ": "access",
+        "typ": token_type,
+        "sub": username
     }
-    return encode_token(to_encode)
-
-
-def create_refresh_token(username: str, id: int, expires_delta: timedelta | None = None) -> str:
-    expire = _now() + (expires_delta or timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
-    jti = str(uuid.uuid4())
-    to_encode = {
-        "sub": username,
-        "id": id,
-        "iat": int(_now().timestamp()),
-        "exp": int(expire.timestamp()),
-        "iss": APP_NAME,
-        "aud": APP_NAME + "-api",
-        "jti": jti,
-        "typ": "refresh",
-    }
+        
     return encode_token(to_encode)
 
 
