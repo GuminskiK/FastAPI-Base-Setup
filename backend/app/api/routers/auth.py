@@ -10,7 +10,6 @@ from app.services.auth_service import (
     revoke_refresh_token as logout_service,
     fetch_auth_sessions,
     delete_session,
-    change_account_status,
     LoginTokenResult,
     RefreshTokenResult,
     DeleteSessionResult,
@@ -135,19 +134,3 @@ async def patch_password(session: db_session, password_change_token: str, plain_
         raise HTTPException(status_code=404, detail="User not found")
 
     return {"message": "Hasło zostało pomyślnie zmienione."}
-
-@router.patch("/activate/{activate_token}", response_model=UserRead)
-async def activate_account(session: db_session, activate_token: str):
-
-    result = await change_account_status(session, activate_token)
-
-    if result == ActivateTokenResult.INVALID_TOKEN:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
-    if result == ActivateTokenResult.WRONG_TOKEN_TYPE:
-        raise HTTPException(status_code=401, detail="Wrong token type")
-
-    if result == ActivateTokenResult.USER_NOT_FOUND:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    return result
