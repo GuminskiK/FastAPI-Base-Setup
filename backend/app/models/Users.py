@@ -1,7 +1,5 @@
 from sqlmodel import SQLModel, Field, Column, Relationship, JSON
 from typing import Optional, List, TYPE_CHECKING
-import re
-
 from pydantic import EmailStr, field_validator
 
 if TYPE_CHECKING:
