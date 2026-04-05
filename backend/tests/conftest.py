@@ -10,6 +10,10 @@ from app.core.db import get_session
 from app.core.redis import get_redis
 from app.models.Users import User
 from app.services.users import get_current_admin_user
+from app.core.rate_limiting import limiter
+
+# Disable rate limiting for tests
+limiter.enabled = False
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 

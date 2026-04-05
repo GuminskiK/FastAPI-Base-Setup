@@ -18,7 +18,7 @@ from app.services.auth_service import (
     send_change_password_mail,
     change_password, ChangePasswordResult
 )
-from app.models.Users import UserRead
+from app.models.Users import UserRead, NewPasswordModel
 from app.core.rate_limiting import limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -122,10 +122,10 @@ async def forgot_password(session: db_session, background_tasks: BackgroundTasks
     return {"message": "Jeśli to konto instnieje, wysłaliśmy instrukcje resetu hasła na wskazany adres e-mail."}
 
 @router.patch("/change_password/{password_change_token}")
-async def patch_password(session: db_session, password_change_token: str, plain_password: str = Body(..., embed=True)):
+async def patch_password(session: db_session, password_change_token: str, payload: NewPasswordModel):
 
-    result = await change_password(session, password_change_token, plain_password)
-    
+    result = await change_password(session, password_change_token, payload.plain_password)
+
     if result == ChangePasswordResult.INVALID_TOKEN:
         raise HTTPException(status_code=401, detail="Invalid token")
     

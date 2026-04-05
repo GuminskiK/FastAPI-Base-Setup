@@ -8,13 +8,13 @@ def test_login_success(client):
     # Setup user
     client.post(
         "/users", 
-        json={"username": "AuthUser", "email": "auth@example.com", "plain_password": "AuthPassword"}
+        json={"username": "AuthUser", "email": "auth@example.com", "plain_password": "Auth!Password1"}
     )
     
     # Login
     response = client.post(
         "/auth/token",
-        data={"username": "AuthUser", "password": "AuthPassword"}
+        data={"username": "AuthUser", "password": "Auth!Password1"}
     )
     
     assert response.status_code == 200
@@ -27,12 +27,12 @@ def test_login_invalid_credentials(client):
     # Setup user
     client.post(
         "/users", 
-        json={"username": "AuthUser2", "email": "auth2@example.com", "plain_password": "AuthPassword"}
+        json={"username": "AuthUser2", "email": "auth2@example.com", "plain_password": "Auth!Password1"}
     )
     
     response = client.post(
         "/auth/token",
-        data={"username": "AuthUser2", "password": "WrongPassword"}
+        data={"username": "AuthUser2", "password": "Wr0ng!Password"}
     )
     
     assert response.status_code == 401
@@ -42,13 +42,13 @@ def test_login_with_2fa(client):
     # Setup user
     client.post(
         "/users", 
-        json={"username": "TwoFaUser", "email": "2fa@example.com", "plain_password": "password"}
+        json={"username": "TwoFaUser", "email": "2fa@example.com", "plain_password": "P@ssw0rd1"}
     )
     
     # First login to setup 2FA
     login_resp = client.post(
         "/auth/token",
-        data={"username": "TwoFaUser", "password": "password"}
+        data={"username": "TwoFaUser", "password": "P@ssw0rd1"}
     )
     token = login_resp.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
@@ -64,7 +64,7 @@ def test_login_with_2fa(client):
     # Now login without 2FA should fail with 403
     resp_no_2fa = client.post(
         "/auth/token",
-        data={"username": "TwoFaUser", "password": "password"}
+        data={"username": "TwoFaUser", "password": "P@ssw0rd1"}
     )
     assert resp_no_2fa.status_code == 403
     assert resp_no_2fa.json()["detail"] == "2FA required"
@@ -73,7 +73,7 @@ def test_login_with_2fa(client):
     valid_code_login = pyotp.TOTP(secret).now()
     resp_with_2fa = client.post(
         "/auth/token",
-        data={"username": "TwoFaUser", "password": "password", "mfa_code": valid_code_login}
+        data={"username": "TwoFaUser", "password": "P@ssw0rd1", "mfa_code": valid_code_login}
     )
     assert resp_with_2fa.status_code == 200
     assert "access_token" in resp_with_2fa.json()
@@ -81,11 +81,11 @@ def test_login_with_2fa(client):
 def test_refresh_token(client):
     client.post(
         "/users", 
-        json={"username": "RefUser", "email": "ref@example.com", "plain_password": "password"}
+        json={"username": "RefUser", "email": "ref@example.com", "plain_password": "P@ssw0rd1"}
     )
     login_resp = client.post(
         "/auth/token",
-        data={"username": "RefUser", "password": "password"}
+        data={"username": "RefUser", "password": "P@ssw0rd1"}
     )
     assert login_resp.status_code == 200
     refresh_token = login_resp.json()["refresh_token"]
@@ -112,11 +112,11 @@ def test_refresh_token(client):
 def test_refresh_token_reuse_detection(client):
     client.post(
         "/users", 
-        json={"username": "ReuseUser", "email": "reuse@example.com", "plain_password": "password"}
+        json={"username": "ReuseUser", "email": "reuse@example.com", "plain_password": "P@ssw0rd1"}
     )
     login_resp = client.post(
         "/auth/token",
-        data={"username": "ReuseUser", "password": "password"}
+        data={"username": "ReuseUser", "password": "P@ssw0rd1"}
     )
     old_refresh_token = login_resp.json()["refresh_token"]
 
@@ -138,11 +138,11 @@ def test_refresh_token_reuse_detection(client):
 def test_logout(client):
     client.post(
         "/users", 
-        json={"username": "OutUser", "email": "out@example.com", "plain_password": "password"}
+        json={"username": "OutUser", "email": "out@example.com", "plain_password": "P@ssw0rd1"}
     )
     login_resp = client.post(
         "/auth/token",
-        data={"username": "OutUser", "password": "password"}
+        data={"username": "OutUser", "password": "P@ssw0rd1"}
     )
     refresh_token = login_resp.json()["refresh_token"]
 
@@ -162,13 +162,13 @@ def test_logout(client):
 def test_get_sessions_and_logout_specific(client):
     client.post(
         "/users", 
-        json={"username": "SessionUser", "email": "sess@example.com", "plain_password": "password"}
+        json={"username": "SessionUser", "email": "sess@example.com", "plain_password": "P@ssw0rd1"}
     )
     
     # Session 1
     resp1 = client.post(
         "/auth/token",
-        data={"username": "SessionUser", "password": "password"},
+        data={"username": "SessionUser", "password": "P@ssw0rd1"},
         headers={"user-agent": "TestDevice 1"}
     )
     token1 = resp1.json()["access_token"]
@@ -176,7 +176,7 @@ def test_get_sessions_and_logout_specific(client):
     # Session 2
     client.post(
         "/auth/token",
-        data={"username": "SessionUser", "password": "password"},
+        data={"username": "SessionUser", "password": "P@ssw0rd1"},
         headers={"user-agent": "TestDevice 2"}
     )
 
@@ -216,7 +216,7 @@ def test_activate_account(mock_send_message, client):
     # W mocku blokujemy faktyczną próbę nawiązania po TCP z serwerem w testach
     resp = client.post(
         "/users",
-        json={"username": "ActivationTestUser", "email": "activate@example.com", "plain_password": "password123"}
+        json={"username": "ActivationTestUser", "email": "activate@example.com", "plain_password": "P@ssword123"}
     )
     assert resp.status_code == 201
     
@@ -238,7 +238,7 @@ def test_change_password_flow(mock_send_message, client):
     # 1. Setup User
     user_resp = client.post(
         "/users",
-        json={"username": "PassUser", "email": "pass@example.com", "plain_password": "OldPassword"}
+        json={"username": "PassUser", "email": "pass@example.com", "plain_password": "0ldP@ssword"}
     )
     user_id = user_resp.json()["id"]
 
@@ -251,14 +251,14 @@ def test_change_password_flow(mock_send_message, client):
     reset_token = create_token(user_id, "PassUser", TokenTypes.CHANGE_PASSWORD, timedelta(minutes=60))
 
     # 4. Wykorzystanie go na endpoincie zmiany hasla
-    new_password = "NewSuperPassword123"
+    new_password = "N3wSuper!Password"
     change_resp = client.patch(f"/auth/change_password/{reset_token}", json={"plain_password": new_password})
     
     assert change_resp.status_code == 200
     assert "Hasło zostało pomyślnie zmienione" in change_resp.json()["message"]
 
     # 5. Weryfikacja (Logowanie Starym haslem musi byc odrzucone)
-    fail_login = client.post("/auth/token", data={"username": "PassUser", "password": "OldPassword"})
+    fail_login = client.post("/auth/token", data={"username": "PassUser", "password": "0ldP@ssword"})
     assert fail_login.status_code == 401
     
     # 6. Weryfikacja (Logowanie Nowym haslem dziala)

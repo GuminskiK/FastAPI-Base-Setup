@@ -1,13 +1,29 @@
 from sqlmodel import SQLModel, Field, Column, Relationship, JSON
 from typing import Optional, List, TYPE_CHECKING
-
-from pydantic import EmailStr
+from pydantic import EmailStr, field_validator
 
 if TYPE_CHECKING:
     from .APIKeys import APIKey
 
+USERNAME_PATTERN = r"^[a-zA-Z0-9_\-]+$"
+
+def validate_password_strength(v: str) -> str:
+    if not v:
+        return v
+    if len(v) < 8:
+        raise ValueError("Hasło musi mieć co najmniej 8 znaków")
+    if not any(c.isupper() for c in v):
+        raise ValueError("Hasło musi posiadać przynajmniej jedną dużą literę")
+    if not any(c.islower() for c in v):
+        raise ValueError("Hasło musi posiadać przynajmniej jedną małą literę")
+    if not any(c.isdigit() for c in v):
+        raise ValueError("Hasło musi posiadać przynajmniej jedną cyfrę")
+    if not any(not c.isalnum() for c in v):
+        raise ValueError("Hasło musi posiadać przynajmniej jeden znak specjalny")
+    return v
+
 class UserBase(SQLModel):
-    username: str = Field(index=True, unique=True)
+    username: str = Field(index=True, unique=True, min_length=3, max_length=40, regex=USERNAME_PATTERN)
     email: EmailStr = Field(unique=True)
 
 class User(UserBase, table=True):
@@ -27,6 +43,11 @@ class User(UserBase, table=True):
 class UserCreate(UserBase):
     plain_password: str
 
+    @field_validator("plain_password")
+    @classmethod
+    def check_password(cls, v):
+        return validate_password_strength(v)
+
 class UserRead(UserBase):
     id: int
     is_superuser: bool
@@ -34,5 +55,20 @@ class UserRead(UserBase):
     is_totp_enabled: bool
 
 class UserUpdate(SQLModel):
-    username: Optional[str] = None
+    username: Optional[str] = Field(default=None, min_length=3, max_length=40, regex=USERNAME_PATTERN)
     plain_password: Optional[str] = None
+
+    @field_validator("plain_password")
+    @classmethod
+    def check_password(cls, v):
+        if v is not None:
+            return validate_password_strength(v)
+        return v
+
+class NewPasswordModel(SQLModel):
+    plain_password: str
+
+    @field_validator("plain_password")
+    @classmethod
+    def check_password(cls, v):
+        return validate_password_strength(v)

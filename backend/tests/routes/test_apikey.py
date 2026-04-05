@@ -1,4 +1,4 @@
-def get_auth_headers(client, username="TestUser", password="TestPassword"):
+def get_auth_headers(client, username="TestUser", password="TestPassword1!"):
     client.post("/users", json={"username": username, "email": f"{username}@example.com", "plain_password": password})
     login_response = client.post("/auth/token", data={"username": username, "password": password})
     token = login_response.json().get("access_token")
