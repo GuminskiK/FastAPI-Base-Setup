@@ -33,86 +33,40 @@ async def post_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     mfa_code: str | None = Form(default=None)
 ):
-    result = await login_token(request, redis, session, form_data, mfa_code)
+    return await login_token(request, redis, session, form_data, mfa_code)
 
-    if result == LoginTokenResult.INVALID_CREDENTIALS:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-
-    if result == LoginTokenResult.REQUIRED_2FA_CODE:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="2FA required")
-
-    if result == LoginTokenResult.INVALID_2FA_CODE:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid 2FA code")
-
-    return result
 
 
 @router.post("/refresh", response_model=Token)
 async def post_refresh_token(redis: redis_client, refresh_token: str = Body(..., embed=True)):
     
-    result = await refresh_token_service(redis, refresh_token)
-
-    if result == RefreshTokenResult.INVALID_TOKEN:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
-    if result == RefreshTokenResult.WRONG_TOKEN_TYPE:
-        raise HTTPException(status_code=401, detail="Wrong token type")
-
-    if result == RefreshTokenResult.REFRESH_TOKEN_REUSE:
-        raise HTTPException(status_code=401, detail="Refresh token reuse detected; all sessions revoked")
-
-    if result == RefreshTokenResult.REFRESH_REVOKE_OR_EXPIRED:
-        raise HTTPException(status_code=401, detail="Refresh revoked or expired")
-
-    return result
+    return await refresh_token_service(redis, refresh_token)
 
 @router.post("/logout")
 async def logout(redis: redis_client, refresh_token: str = Body(..., embed=True)):
     
-    result = await logout_service(redis, refresh_token)
-    return result
+    return await logout_service(redis, refresh_token)
 
 @router.get("/sessions")
 async def get_auth_sessions(redis: redis_client, user: owner_or_admin):
     
-    result = await fetch_auth_sessions(redis, user)
-    return result
+    return await fetch_auth_sessions(redis, user)
 
 @router.post("/logout/{sid}")
 async def logout_with_session_id(redis: redis_client, user: owner_or_admin, sid: str):
     
-    result = await delete_session(redis, user, sid)
-
-    if result == DeleteSessionResult.SESSION_NOT_FOUND:
-        raise HTTPException(status_code=404, detail="session not found")
-
-    return result
+    return await delete_session(redis, user, sid)
 
 @router.patch("/activate/{activate_token}", response_model=UserRead)
 async def activate_account(session: db_session, activate_token: str):
 
-    result = await change_account_status(session, activate_token)
-
-    if result == ActivateTokenResult.INVALID_TOKEN:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
-    if result == ActivateTokenResult.WRONG_TOKEN_TYPE:
-        raise HTTPException(status_code=401, detail="Wrong token type")
-
-    if result == ActivateTokenResult.USER_NOT_FOUND:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    return result
+    return await change_account_status(session, activate_token)
 
 @router.patch("/change_superuser_status/{user_id}", response_model=UserRead)
 async def patch_superuser_status(session: db_session, user_id: int, admin: current_admin_user):
 
-    result = await change_superuser_status(session, user_id)
+    return await change_superuser_status(session, user_id)
 
-    if result == ChangeSuperuserStatusResult.USER_NOT_FOUND:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    return result
 
 @router.post("/forgot_password")
 async def forgot_password(session: db_session, background_tasks: BackgroundTasks, email: str = Body(..., embed=True)):
@@ -124,15 +78,6 @@ async def forgot_password(session: db_session, background_tasks: BackgroundTasks
 @router.patch("/change_password/{password_change_token}")
 async def patch_password(session: db_session, password_change_token: str, payload: NewPasswordModel):
 
-    result = await change_password(session, password_change_token, payload.plain_password)
-
-    if result == ChangePasswordResult.INVALID_TOKEN:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
-    if result == ChangePasswordResult.WRONG_TOKEN_TYPE:
-        raise HTTPException(status_code=401, detail="Wrong token type")
-
-    if result == ChangePasswordResult.USER_NOT_FOUND:
-        raise HTTPException(status_code=404, detail="User not found")
+    await change_password(session, password_change_token, payload.plain_password)
 
     return {"message": "Hasło zostało pomyślnie zmienione."}

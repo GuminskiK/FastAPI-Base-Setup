@@ -2,7 +2,7 @@ from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from pydantic import EmailStr
 from app.core.config import settings
 from app.core.logger import get_logger
-
+from app.core.exceptions.exceptions import FailedToSentActivationEmailException, FailedToSentPasswordResetEmailException
 logger = get_logger(__name__)
 
 conf = ConnectionConfig(
@@ -42,6 +42,7 @@ async def send_activation_email(email_to: EmailStr, token: str):
         logger.info("activation_email_sent_successfully", email=email_to)
     except Exception as e:
         logger.error("failed_to_send_activation_email", error=str(e), email=email_to)
+        raise FailedToSentActivationEmailException()
 
 async def send_password_reset_email(email_to: EmailStr, token: str):
     reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
@@ -67,3 +68,4 @@ async def send_password_reset_email(email_to: EmailStr, token: str):
         logger.info("password_reset_email_sent_successfully", email=email_to)
     except Exception as e:
         logger.error("failed_to_send_password_reset_email", error=str(e), email=email_to)
+        raise FailedToSentPasswordResetEmailException()

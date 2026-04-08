@@ -8,6 +8,9 @@ from jose import jwt, JWTError
 from fastapi.security import OAuth2PasswordBearer, APIKeyHeader
 from typing import Annotated, Optional
 from sqlmodel import select
+from app.core.exceptions.exceptions import (
+    AdminNeededException, AdminOrOwnerNeededException
+)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
@@ -60,23 +63,17 @@ async def get_current_user( session: db_session, token: Optional[str] = Depends(
 
 async def get_current_admin_user(current_user: User = Depends(get_current_active_user)) -> User:
     if not current_user.is_superuser: 
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Brak wystarczających uprawnień (Wymagany Admin)"
-        )
+        raise AdminNeededException()
     return current_user
 
 
 async def verify_user_ownership_or_admin(
-    user_id: int, # FastAPI automatycznie wstrzygnie to z adresu URL (np. z /users/{user_id})!
+    user_id: int,
     current_user: User = Depends(get_current_active_user)
 ) -> User:
     
     if current_user.id != user_id and not current_user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Możesz zarządzać tylko swoimi zasobami."
-        )
+        raise AdminOrOwnerNeededException
     return current_user
 
 current_user = Annotated[User, Depends(get_current_user)]
