@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Body, Request, Form, BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-from app.core.db import db_session
-from app.core.redis import redis_client
+from backend.app.api.deps.db import db_session
+from backend.app.api.deps.redis import redis_client
 from app.models.Tokens import Token
 from app.services.users import owner_or_admin, current_admin_user
 from app.services.auth_service import (

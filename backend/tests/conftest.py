@@ -6,10 +6,10 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import SQLModel
 
 from app.main import app
-from app.core.db import get_session
-from app.core.redis import get_redis
+from backend.app.api.deps.db import get_session
+from backend.app.api.deps.redis import get_redis
 from app.models.Users import User
-from app.services.users import get_current_admin_user
+from app.api.deps.users import get_current_admin_user
 from app.core.rate_limiting import limiter
 
 # Disable rate limiting for tests

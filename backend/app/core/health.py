@@ -1,8 +1,8 @@
 import shutil
 import os
 from typing import Tuple, Any
-from app.core.db import db_session
-from app.core.redis import redis_client
+from backend.app.api.deps.db import db_session
+from backend.app.api.deps.redis import redis_client
 from sqlalchemy import text
 
 def check_disk(min_free_percent: float = 10.0) -> Tuple[bool, dict]:

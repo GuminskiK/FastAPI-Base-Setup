@@ -12,11 +12,11 @@ from app.core.auth.jwt import (
     revoke_all_user_sessions,
     get_password_hash
 )
-from app.core.logger import get_logger
+from backend.app.core.logger.logger import get_logger
 import time
-from app.core.db import db_session
+from backend.app.api.deps.db import db_session
 from app.services.users import get_user_by_username, get_user_by_email
-from app.core.redis import redis_client
+from backend.app.api.deps.redis import redis_client
 from app.models.Tokens import Token, TokenTypes
 from app.services.users import owner_or_admin, get_user_by_id
 import pyotp

@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from app.core.health import check_disk, check_db, check_redis
-from app.core.redis import redis_client
-from app.core.db import db_session
+from backend.app.api.deps.redis import redis_client
+from backend.app.api.deps.db import db_session
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routers import users, auth, apikeys, two_fa
 from contextlib import asynccontextmanager
-from app.core.logger import setup_logging
-from app.core.logging_middleware import StructlogMiddleware
+from backend.app.core.logger.logger import setup_logging
+from backend.app.core.logger.logging_middleware import StructlogMiddleware
 from app.core.rate_limiting import limiter
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -18,7 +18,7 @@ setup_logging(json_logs=False, log_level="INFO")  # SET json_logs=True for Sentr
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
-    from app.core.db import AsyncSessionLocal, engine
+    from backend.app.api.deps.db import AsyncSessionLocal, engine
     from app.core.config import settings
     from app.models.Users import User
     from sqlmodel import select, SQLModel

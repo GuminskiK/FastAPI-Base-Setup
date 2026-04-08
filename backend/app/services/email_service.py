@@ -1,7 +1,7 @@
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from pydantic import EmailStr
 from app.core.config import settings
-from app.core.logger import get_logger
+from backend.app.core.logger.logger import get_logger
 from app.core.exceptions.exceptions import FailedToSentActivationEmailException, FailedToSentPasswordResetEmailException
 logger = get_logger(__name__)
 

@@ -1,10 +1,10 @@
-from app.core.db import db_session
+from backend.app.api.deps.db import db_session
 from sqlmodel import select
 from app.models.Users import User, UserUpdate, UserCreate
 from app.core.auth.utils import get_blind_index
 from app.core.auth.jwt import get_password_hash, create_token
 from app.models.Tokens import TokenTypes
-from app.core.logger import get_logger
+from backend.app.core.logger.logger import get_logger
 from app.services.users import get_user_by_username, get_user_by_email
 from app.core.config import settings
 from app.services.email_service import send_activation_email

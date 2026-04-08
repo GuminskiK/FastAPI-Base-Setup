@@ -4,9 +4,9 @@ import base64
 import io
 import secrets
 from app.models.Users import User
-from app.core.db import db_session 
+from backend.app.api.deps.db import db_session 
 from app.core.config import settings
-from app.core.logger import get_logger
+from backend.app.core.logger.logger import get_logger
 from app.core.exceptions.exceptions import(
     TwoFaAlreadyEnabledException, TwoFaNotInitiatedException, Invalid2FACodeException, TwoFaNotEnabledException
 )

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, BackgroundTasks
-from app.core.db import db_session
+from backend.app.api.deps.db import db_session
 from app.models.Users import UserRead, UserUpdate, UserCreate
 from typing import List
 from app.services.users import current_admin_user, current_active_user

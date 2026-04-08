@@ -1,13 +1,13 @@
 from fastapi import HTTPException
 from app.core.config import settings
-from app.core.db import db_session
+from backend.app.api.deps.db import db_session
 from app.models.Users import User
 from app.models.APIKeys import APIKey
 from sqlmodel import select
 import hashlib
 import secrets
 import hmac
-from app.core.logger import get_logger
+from backend.app.core.logger.logger import get_logger
 
 logger = get_logger(__name__)
 
