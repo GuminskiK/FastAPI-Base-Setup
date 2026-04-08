@@ -1,8 +1,11 @@
-import pyotp
-from unittest.mock import patch
 from datetime import timedelta
+from unittest.mock import patch
+
+import pyotp
+
 from app.core.auth.jwt import create_token
 from app.models.Tokens import TokenTypes
+
 
 def test_login_success(client):
     # Setup user
@@ -61,13 +64,13 @@ def test_login_with_2fa(client):
     valid_code = pyotp.TOTP(secret).now()
     client.post("/2fa/enable", json={"code": valid_code}, headers=headers)
 
-    # Now login without 2FA should fail with 403
+    # Now login without 2FA should fail with 401
     resp_no_2fa = client.post(
         "/auth/token",
         data={"username": "TwoFaUser", "password": "P@ssw0rd1"}
     )
-    assert resp_no_2fa.status_code == 403
-    assert resp_no_2fa.json()["detail"] == "2FA required"
+    assert resp_no_2fa.status_code == 401
+    assert resp_no_2fa.json()["detail"] == "Required 2FA code"
     
     # Login with valid 2FA should succeed
     valid_code_login = pyotp.TOTP(secret).now()

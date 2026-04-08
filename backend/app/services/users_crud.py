@@ -1,48 +1,35 @@
-from app.core.db import db_session
-from sqlmodel import select
-from app.models.Users import User, UserUpdate, UserCreate
-from app.core.auth.utils import get_blind_index
-from app.core.auth.jwt import get_password_hash, create_token
-from app.models.Tokens import TokenTypes
-from app.core.logger import get_logger
-from app.services.users import get_user_by_username, get_user_by_email
-from app.core.config import settings
-from app.services.email_service import send_activation_email
-from fastapi import BackgroundTasks
-from enum import Enum
 from datetime import timedelta
+
+from fastapi import BackgroundTasks
+from sqlmodel import select
+from structlog.contextvars import bind_contextvars
+
+from app.core.auth.jwt import create_token, get_password_hash
+from app.core.auth.utils import get_blind_index
+from app.core.config import settings
+from app.core.exceptions.exceptions import (EmailTakenException,
+                                            UsernameTakenException,
+                                            UserNotFoundException)
+from app.models.Tokens import TokenTypes
+from app.models.Users import User, UserCreate, UserUpdate
+from app.services.email_service import send_activation_email
+from app.services.users import get_user_by_email, get_user_by_username
+from app.api.deps.db import db_session
+from app.core.logger.logger import get_logger
+
 logger = get_logger(__name__)
 ACTIVATE_TOKEN_EXPIRE_DAYS = settings.ACTIVATE_TOKEN_EXPIRE_DAYS
 PASSWORD_RESET_TOKEN_EXPIRE_MINUTES= settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
-
-
-class CreateUserResult(Enum):
-    SUCCESS = "success"
-    USERNAME_TAKEN = "username_taken"
-    EMAIL_ALREADY_REGISTERED = "email_already_registered"
-
-class FetchUserResult(Enum):
-    SUCCESS = "success"
-    USER_NOT_FOUND = "user_not_found"
-
-class UpdateUserResult(Enum):
-    SUCCESS = "success"
-    USER_NOT_FOUND = "user_not_found"
-    EMAIL_ALREADY_REGISTERED = "email_already_registered"
-
-class RemoveUserResult(Enum):
-    SUCCESS = "success"
-    USER_NOT_FOUND = "user_not_found"
 
 async def create_user(session: db_session, user: UserCreate, background_tasks: BackgroundTasks):
 
     if await get_user_by_username(session, user.username):
         logger.warning("user_create_failed_username_taken")
-        return CreateUserResult.USERNAME_TAKEN
+        raise UsernameTakenException()
     
     if await get_user_by_email(session, user.email):
         logger.warning("user_create_failed_email_taken")
-        return CreateUserResult.EMAIL_TAKEN
+        raise EmailTakenException()
     
     hashed = get_password_hash(user.plain_password)
     
@@ -72,7 +59,7 @@ async def fetch_user(session: db_session, user_id: int):
     user = result.one_or_none()
 
     if not user:
-        return FetchUserResult.USER_NOT_FOUND
+        raise UserNotFoundException()
 
     return user
 
@@ -82,19 +69,23 @@ async def fetch_all_users(session: db_session):
     users = result.all()
 
     if not users:
-        return FetchUserResult.USER_NOT_FOUND
+        raise UserNotFoundException()
     
     return users
 
 
 async def update_user(session: db_session, user: UserUpdate, user_id: int):
     
+    bind_contextvars(
+        target_user = user_id
+    )
+
     result = await session.exec(select(User).where(User.id == user_id))
     db_user = result.one_or_none()
 
     if not db_user:
         logger.warning("user_patch_failed_user_not_found", user_id=user_id)
-        return UpdateUserResult.USER_NOT_FOUND
+        raise UserNotFoundException()
     
     user_data = user.model_dump(exclude_unset=True)
     
@@ -105,7 +96,7 @@ async def update_user(session: db_session, user: UserUpdate, user_id: int):
         existing_user = get_user_by_email(session, user_data["email"])
         if existing_user and existing_user.id != user_id:
             logger.warning("user_patch_failed_email_taken", user_id=user_id)
-            return UpdateUserResult.EMAIL_ALREADY_REGISTERED
+            raise EmailTakenException()
         user.email_blind_index = get_blind_index(user_data["email"])
 
     db_user.sqlmodel_update(user_data)
@@ -118,12 +109,16 @@ async def update_user(session: db_session, user: UserUpdate, user_id: int):
 
 async def remove_user(session: db_session, user_id: int):
 
+    bind_contextvars(
+        target_user = user_id
+    )
+
     result = await session.exec(select(User).where(User.id == user_id))
     db_user = result.one_or_none()
 
     if not db_user:
         logger.warning("user_delete_failed_not_found", user_id=user_id)
-        return RemoveUserResult.USER_NOT_FOUND
+        raise UserNotFoundException()
     
     await session.delete(db_user)
     await session.commit()

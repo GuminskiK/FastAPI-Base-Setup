@@ -1,23 +1,7 @@
-fastapi
-uvicorn[standard]
-sqlmodel[asyncio]
-asyncpg
-httpx
-pydantic-settings
-redis
+-r requirements.txt
 pytest
 pytest-asyncio
 aiosqlite
-pyotp
-qrcode
-argon2-cffi
-passlib[bcrypt]
-python-jose[cryptography]
-python-multipart
-pytest-cov
-pillow
-structlog
-asgi-correlation-id
-python-json-logger
-fastapi-mail
-slowapi
+ruff
+black
+isort

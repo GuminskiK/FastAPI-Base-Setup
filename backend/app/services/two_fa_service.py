@@ -1,35 +1,25 @@
-import pyotp
-import qrcode
 import base64
 import io
 import secrets
-from enum import Enum
-from app.models.Users import User
-from app.core.db import db_session 
+
+import pyotp
+import qrcode
+
 from app.core.config import settings
-from app.core.logger import get_logger
-
-class Setup2FAResult(Enum):
-    SUCCESS = "success"
-    ALREADY_ENABLED = "already_enabled"
-
-class Enable2FAResult(Enum):
-    SUCCESS = "success"
-    ALREADY_ENABLED = "already_enabled"
-    NOT_INITIATED = "not_initiated"
-    INVALID_CODE = "invalid_code"
-
-class Disable2FAResult(Enum):
-    SUCCESS = "success"
-    NOT_ENABLED = "not_enabled"
-    INVALID_CODE = "invalid_code"
+from app.core.exceptions.exceptions import (Invalid2FACodeException,
+                                            TwoFaAlreadyEnabledException,
+                                            TwoFaNotEnabledException,
+                                            TwoFaNotInitiatedException)
+from app.models.Users import User
+from app.api.deps.db import db_session
+from app.core.logger.logger import get_logger
 
 logger = get_logger(__name__)
 
-async def generate_setup_data(user: User, session: db_session) -> dict | Setup2FAResult:
+async def generate_setup_data(user: User, session: db_session):
     if user.is_totp_enabled:
         logger.info("2fa_setup_already_enabled", user_id=str(user.id))
-        return Setup2FAResult.ALREADY_ENABLED
+        raise TwoFaAlreadyEnabledException()
         
     secret = pyotp.random_base32()
     totp = pyotp.TOTP(secret)
@@ -54,33 +44,33 @@ async def generate_setup_data(user: User, session: db_session) -> dict | Setup2F
         "backup_codes": backup_codes
     }
 
-async def verify_and_enable(user: User, session: db_session, code: str) -> Enable2FAResult:
+async def verify_and_enable(user: User, session: db_session, code: str):
     
     if user.is_totp_enabled:
-        return Enable2FAResult.ALREADY_ENABLED
+        raise TwoFaAlreadyEnabledException()
         
     if not user.totp_secret:
-        return Enable2FAResult.NOT_INITIATED
+        raise TwoFaNotInitiatedException()
         
     totp = pyotp.TOTP(user.totp_secret)
     if not totp.verify(code):
-        return Enable2FAResult.INVALID_CODE
+        raise Invalid2FACodeException()
         
     user.is_totp_enabled = True
     session.add(user)
     await session.commit()
     
-    return Enable2FAResult.SUCCESS
+    return {"message": "ok"}
 
 async def verify_and_disable(user: User, session: db_session, code: str):
 
     if not user.is_totp_enabled:
-        return Disable2FAResult.NOT_ENABLED
+       raise TwoFaNotEnabledException()
         
     totp = pyotp.TOTP(user.totp_secret)
 
     if not totp.verify(code):
-        return Disable2FAResult.INVALID_CODE
+       raise Invalid2FACodeException()
     
     user.is_totp_enabled = False
     user.totp_secret = None

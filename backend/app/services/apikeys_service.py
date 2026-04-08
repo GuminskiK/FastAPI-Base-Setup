@@ -1,28 +1,32 @@
-from enum import Enum
-from app.core.db import db_session
-from app.models.Users import User
-from app.core.auth.apikeys import generate_api_key_for_user, revoke_user_api_key
 from sqlmodel import select
+from structlog.contextvars import bind_contextvars
+
+from app.core.auth.apikeys import (generate_api_key_for_user,
+                                   revoke_user_api_key)
+from app.core.exceptions.exceptions import \
+    AdminForibiddenFromCreatingApiKeyException
 from app.models.APIKeys import APIKey
+from app.models.Users import User
+from app.api.deps.db import db_session
+from app.core.logger.logger import get_logger
 
-from app.core.logger import get_logger
 logger = get_logger(__name__)
-
-class CreateApikeyResult(str, Enum):
-    SUCCESS = "sucess"
-    ADMIN = "admin"
 
 async def validate_and_create_apikey(user: User, session: db_session, name: str):
 
     if user.is_superuser:
         logger.warning("api_key_creation_attempted_by_admin", user_id=str(user.id))
-        return CreateApikeyResult
+        raise AdminForibiddenFromCreatingApiKeyException()
 
     key = await generate_api_key_for_user(session, user.id, name)
     logger.info("api_key_created", user_id=str(user.id), key_name=name)
     return {"api_key": key}
 
 async def revoke_apikey(key_id: int, user: User, session: db_session):
+
+    bind_contextvars(
+        target_key = key_id
+    )
 
     await revoke_user_api_key(session, user.id, key_id)
     logger.info("api_key_revoked", user_id=str(user.id), key_id=key_id)

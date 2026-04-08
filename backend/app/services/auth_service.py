@@ -1,75 +1,39 @@
-from fastapi import Depends, Request, Form, BackgroundTasks
-from fastapi.security import OAuth2PasswordRequestForm
-from sqlmodel import select
-from app.models.Users import User
-from app.core.auth.jwt import (
-    verify_password,
-    create_token,
-    decode_token,
-    is_refresh_valid,
-    revoke_refresh,
-    store_refresh_token,
-    revoke_all_user_sessions,
-    get_password_hash
-)
-from app.core.logger import get_logger
-import time
-from app.core.db import db_session
-from app.services.users import get_user_by_username, get_user_by_email
-from app.core.redis import redis_client
-from app.models.Tokens import Token, TokenTypes
-from app.services.users import owner_or_admin, get_user_by_id
-import pyotp
-from enum import Enum
-from app.core.config import settings
-from datetime import timedelta
-from app.services.email_service import send_password_reset_email
 import asyncio
+import time
+from datetime import timedelta
+
+import pyotp
+from fastapi import BackgroundTasks, Depends, Form, Request
+from fastapi.security import OAuth2PasswordRequestForm
 from passlib.context import CryptContext
+from sqlmodel import select
+
+from app.api.deps.users import owner_or_admin
+from app.core.auth.jwt import (create_token, decode_token, get_password_hash,
+                               is_refresh_valid, revoke_all_user_sessions,
+                               revoke_refresh, store_refresh_token,
+                               verify_password)
+from app.core.config import settings
+from app.core.exceptions.exceptions import (
+    Invalid2FACodeException, InvalidCredentialsException,
+    InvalidTokenException, RefreshTokenReuseException,
+    RefreshTokenRevokeFailedException, RefreshTokenRevokeOrExpiredException,
+    Required2FACodeException, SessionNotFoundException, UserNotFoundException,
+    WrongTokenTypeException)
+from app.models.Tokens import Token, TokenTypes
+from app.models.Users import User
+from app.services.email_service import send_password_reset_email
+from app.services.users import (get_user_by_email, get_user_by_id,
+                                get_user_by_username)
+from app.api.deps.db import db_session
+from app.api.deps.redis import redis_client
+from app.core.logger.logger import get_logger
 
 logger = get_logger(__name__)
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 PASSWORD_RESET_TOKEN_EXPIRE_MINUTES = settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
 
-
-class LoginTokenResult(Enum):
-    SUCCESS = "success"
-    INVALID_CREDENTIALS = "invalid_credentials"
-    REQUIRED_2FA_CODE = "required_2fa_code"
-    INVALID_2FA_CODE = "invalid_2fa_code"
-
-class RefreshTokenResult(Enum):
-    SUCCESS = "success"
-    INVALID_TOKEN = "invalid_token"
-    WRONG_TOKEN_TYPE = "wrong_token_type"
-    REFRESH_TOKEN_REUSE = "refresh_token_reuse"
-    REFRESH_REVOKE_OR_EXPIRED = "refresh_revoke_or_expired"
-
-class DeleteSessionResult(Enum):
-    SUCCESS = "success"
-    SESSION_NOT_FOUND = "session_not_found"
-
-class ActivateTokenResult(Enum):
-    SUCCESS = "success"
-    INVALID_TOKEN = "invalid_token"
-    WRONG_TOKEN_TYPE = "wrong_token_type"
-    USER_NOT_FOUND = "user_not_found"
-
-class ChangeSuperuserStatusResult(Enum):
-    SUCCESS = "success"
-    USER_NOT_FOUND = "user_not_found"
-
-
-class SendChangePasswordMailResult(Enum):
-    SUCCESS = "success"
-    USER_NOT_FOUND = "user_not_found"
-
-class ChangePasswordResult(Enum):
-    SUCCESS = "success"
-    INVALID_TOKEN = "invalid_token"
-    WRONG_TOKEN_TYPE = "wrong_token_type"
-    USER_NOT_FOUND = "user_not_found"
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 DUMMY_HASH = pwd_context.hash("dummy_password")
@@ -87,16 +51,16 @@ async def login_token(
     if not user:
         verify_password(form_data.password, DUMMY_HASH)
         logger.warning("invalid_user_login_attempt", username=form_data.username)
-        return LoginTokenResult.INVALID_CREDENTIALS
+        raise InvalidCredentialsException()
     
     if not verify_password(form_data.password, user.hashed_password):
         logger.warning("invalid_credentials_attempt", username=form_data.username)
-        return LoginTokenResult.INVALID_CREDENTIALS
+        raise InvalidCredentialsException()
 
     if user.is_totp_enabled:
         if not mfa_code:
             logger.info("2fa_code_missing", username=user.username)
-            return LoginTokenResult.REQUIRED_2FA_CODE
+            raise Required2FACodeException()
 
         totp = pyotp.TOTP(user.totp_secret)
         if not totp.verify(mfa_code):
@@ -107,7 +71,7 @@ async def login_token(
                 logger.info("backup_code_used", username=user.username, user_id=str(user.id))
             else:
                 logger.warning("invalid_2fa_code_attempt", username=user.username)
-                return LoginTokenResult.INVALID_2FA_CODE
+                raise Invalid2FACodeException()
 
     access_token = create_token(user.id, user.username, TokenTypes.ACCESS, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     refresh_token = create_token(user.id, user.username, TokenTypes.REFRESH, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
@@ -134,16 +98,16 @@ async def refresh_token(redis: redis_client, refresh_token: str):
         payload = decode_token(refresh_token)
     except Exception as e:
         logger.warning("token_decode_failed", error=str(e))
-        return RefreshTokenResult.INVALID_TOKEN
-
+        raise InvalidTokenException()
+    
     if payload.get("typ") != TokenTypes.REFRESH:
         logger.warning("wrong_token_type_presented", typ=payload.get("typ"))
-        return RefreshTokenResult.WRONG_TOKEN_TYPE
+        raise WrongTokenTypeException()
 
     jti = payload.get("jti")
     if not jti:
         logger.warning("token_missing_jti")
-        return RefreshTokenResult.INVALID_TOKEN
+        raise InvalidTokenException()
 
     valid = await is_refresh_valid(redis, jti)
     if not valid:
@@ -153,8 +117,8 @@ async def refresh_token(redis: redis_client, refresh_token: str):
             user_id = payload.get("id") or payload.get("sub")
             await revoke_all_user_sessions(redis, str(user_id))
             logger.error("refresh_token_reuse_detected", user_id=str(user_id), jti=jti)
-            return RefreshTokenResult.REFRESH_TOKEN_REUSE
-        return RefreshTokenResult.REFRESH_REVOKE_OR_EXPIRED
+            raise RefreshTokenReuseException()
+        raise RefreshTokenRevokeOrExpiredException()
 
     await revoke_refresh(redis, jti)
 
@@ -184,7 +148,7 @@ async def revoke_refresh_token(redis: redis_client, refresh_token: str):
             logger.info("refresh_token_revoked", jti=jti, user_id=str(payload.get("id")))
     except Exception as e:
         logger.warning("refresh_token_revoke_failed", error=str(e))
-
+        raise RefreshTokenRevokeFailedException()
     return {"message": "Logged out"}
 
 async def fetch_auth_sessions(redis: redis_client, user: owner_or_admin):
@@ -211,7 +175,7 @@ async def fetch_auth_sessions(redis: redis_client, user: owner_or_admin):
 async def delete_session(redis: redis_client, user: owner_or_admin, sid: str):
     if not await redis.sismember(f"user_sessions:{user.id}", sid):
         logger.warning("delete_session_not_found", user_id=str(user.id), sid=sid)
-        return DeleteSessionResult.SESSION_NOT_FOUND
+        return SessionNotFoundException()
 
     index_key = f"user_session_index:{user.id}:{sid}"
     refresh_key = await redis.get(index_key)
@@ -231,22 +195,22 @@ async def change_account_status(session: db_session, activate_token:str):
         payload = decode_token(activate_token)
     except Exception as e:
         logger.warning("token_decode_failed", error=str(e))
-        return ActivateTokenResult.INVALID_TOKEN
+        raise InvalidTokenException()
 
     if payload.get("typ") != TokenTypes.ACTIVATE:
         logger.warning("wrong_token_type_presented", typ=payload.get("typ"))
-        return ActivateTokenResult.WRONG_TOKEN_TYPE
+        raise WrongTokenTypeException()
 
     jti = payload.get("jti")
     if not jti:
         logger.warning("token_missing_jti")
-        return ActivateTokenResult.INVALID_TOKEN
+        raise InvalidTokenException()
     
     user_id = payload.get("id")
     user = await get_user_by_id(session, user_id)
     if not user:
         logger.warning("user_not_found")
-        return ActivateTokenResult.USER_NOT_FOUND
+        raise UserNotFoundException()
 
     user.is_activated = True
     session.add(user)
@@ -264,7 +228,7 @@ async def change_superuser_status(session: db_session, user_id: int):
 
     if not db_user:
         logger.warning("user_not_found")
-        return ChangeSuperuserStatusResult.USER_NOT_FOUND
+        raise 
     
     db_user.is_superuser = True
     session.add(db_user)
@@ -280,7 +244,7 @@ async def send_change_password_mail(session: db_session, email: str, background_
     user = await get_user_by_email(session, email)
     
     if not user:
-        return SendChangePasswordMailResult.USER_NOT_FOUND
+        raise UserNotFoundException()
     
     token = create_token(user.id, user.username, TokenTypes.CHANGE_PASSWORD, timedelta(minutes=PASSWORD_RESET_TOKEN_EXPIRE_MINUTES))
 
@@ -288,7 +252,7 @@ async def send_change_password_mail(session: db_session, email: str, background_
 
     logger.info("password_change_mail_sent", user_id=str(user.id))
 
-    return SendChangePasswordMailResult.SUCCESS
+    return {"message": "success"}
 
 async def change_password(session: db_session, password_change_token: str, plain_password: str):
 
@@ -296,22 +260,22 @@ async def change_password(session: db_session, password_change_token: str, plain
         payload = decode_token(password_change_token)
     except Exception as e:
         logger.warning("token_decode_failed", error=str(e))
-        return ChangePasswordResult.INVALID_TOKEN
+        raise InvalidTokenException()
 
     if payload.get("typ") != TokenTypes.CHANGE_PASSWORD:
         logger.warning("wrong_token_type_presented", typ=payload.get("typ"))
-        return ChangePasswordResult.WRONG_TOKEN_TYPE
+        raise WrongTokenTypeException()
 
     jti = payload.get("jti")
     if not jti:
         logger.warning("token_missing_jti")
-        return ChangePasswordResult.INVALID_TOKEN
+        raise InvalidTokenException()
     
     user_id = payload.get("id")
     user = await get_user_by_id(session, user_id)
     if not user:
         logger.warning("user_not_found")
-        return ChangePasswordResult.USER_NOT_FOUND
+        raise UserNotFoundException()
 
     hashed = get_password_hash(plain_password)
     user.hashed_password = hashed

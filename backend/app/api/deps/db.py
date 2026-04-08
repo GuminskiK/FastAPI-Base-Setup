@@ -1,7 +1,9 @@
-from typing import AsyncGenerator, Annotated
+from typing import Annotated, AsyncGenerator
+
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
+
 from app.core.config import settings
 
 engine = create_async_engine(settings.DATABASE_URL, future=True, echo=False)

@@ -1,5 +1,6 @@
 import pyotp
 
+
 def get_auth_headers(client, username="TestUser", password="TestPassword1!"):
     # 1. Create the user
     client.post(

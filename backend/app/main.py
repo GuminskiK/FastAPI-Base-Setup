@@ -1,16 +1,18 @@
-from fastapi import FastAPI
-from app.core.health import check_disk, check_db, check_redis
-from app.core.redis import redis_client
-from app.core.db import db_session
-from fastapi.middleware.cors import CORSMiddleware
-from app.api.routers import users, auth, apikeys, two_fa
 from contextlib import asynccontextmanager
-from app.core.logger import setup_logging
-from app.core.logging_middleware import StructlogMiddleware
-from app.core.rate_limiting import limiter
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+
+from app.api.routers import apikeys, auth, two_fa, users
+from app.core.health import check_db, check_disk, check_redis
+from app.core.rate_limiting import limiter
+from app.api.deps.db import db_session
+from app.api.deps.redis import redis_client
+from app.core.logger.logger import setup_logging
+from app.core.logger.logging_middleware import StructlogMiddleware
 
 # Initialize structural logging globally
 setup_logging(json_logs=False, log_level="INFO")  # SET json_logs=True for Sentry/Loki!
@@ -18,13 +20,14 @@ setup_logging(json_logs=False, log_level="INFO")  # SET json_logs=True for Sentr
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
-    from app.core.db import AsyncSessionLocal, engine
+    from sqlmodel import SQLModel, select
+
+    from app.core.auth.jwt import get_password_hash
+    from app.core.auth.utils import get_blind_index
     from app.core.config import settings
     from app.models.Users import User
-    from sqlmodel import select, SQLModel
-    from app.core.auth.utils import get_blind_index
-    from app.core.auth.jwt import get_password_hash
-    
+    from app.api.deps.db import AsyncSessionLocal, engine
+
     # Utworzenie wszystkich tabel przez engine
     try:
         async with engine.begin() as conn:

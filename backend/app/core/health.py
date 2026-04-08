@@ -1,9 +1,12 @@
-import shutil
 import os
-from typing import Tuple, Any
-from app.core.db import db_session
-from app.core.redis import redis_client
+import shutil
+from typing import Any, Tuple
+
 from sqlalchemy import text
+
+from app.api.deps.db import db_session
+from app.api.deps.redis import redis_client
+
 
 def check_disk(min_free_percent: float = 10.0) -> Tuple[bool, dict]:
     """Return (ok, info) for disk usage check."""

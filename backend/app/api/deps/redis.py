@@ -1,7 +1,9 @@
-import redis.asyncio as redis
-from app.core.config import settings
 from typing import Annotated
+
+import redis.asyncio as redis
 from fastapi import Depends
+
+from app.core.config import settings
 
 _redis = redis.from_url(settings.REDIS_URL, decode_responses=True)
 

@@ -1,0 +1,6 @@
+.pytest_cache/
+.coverage
+htmlcov/
+tests/
+*.log
+data/

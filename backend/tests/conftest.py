@@ -1,16 +1,16 @@
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlmodel import SQLModel
+from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.main import app
-from app.core.db import get_session
-from app.core.redis import get_redis
-from app.models.Users import User
-from app.services.users import get_current_admin_user
+from app.api.deps.users import get_current_admin_user
 from app.core.rate_limiting import limiter
+from app.main import app
+from app.models.Users import User
+from app.api.deps.db import get_session
+from app.api.deps.redis import get_redis
 
 # Disable rate limiting for tests
 limiter.enabled = False
