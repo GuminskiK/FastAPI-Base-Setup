@@ -1,7 +1,10 @@
-from sqlmodel import SQLModel, Field, Relationship
-from app.models.Users import User
 from datetime import datetime, timezone
 from typing import Optional
+
+from sqlmodel import Field, Relationship, SQLModel
+
+from app.models.Users import User
+
 
 class APIKey(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

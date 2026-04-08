@@ -75,7 +75,7 @@ def test_get_users_no_user(client, override_admin):
     response = client.get("/users")
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "Users not found"}
+    assert response.json() == {"detail": "User not found"}
 
 
 def test_patch_user_ok(client, override_admin):

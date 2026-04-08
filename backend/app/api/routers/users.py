@@ -1,11 +1,12 @@
-from fastapi import APIRouter, BackgroundTasks
-from backend.app.api.deps.db import db_session
-from app.models.Users import UserRead, UserUpdate, UserCreate
 from typing import List
-from app.api.deps.users import current_admin_user, current_active_user
-from app.services.users_crud import (
-    remove_user, update_user, fetch_user,
-    fetch_all_users, create_user)
+
+from fastapi import APIRouter, BackgroundTasks
+
+from app.api.deps.users import current_active_user, current_admin_user
+from app.models.Users import UserCreate, UserRead, UserUpdate
+from app.services.users_crud import (create_user, fetch_all_users, fetch_user,
+                                     remove_user, update_user)
+from backend.app.api.deps.db import db_session
 
 router = APIRouter(prefix="/users", tags=["users"])
 

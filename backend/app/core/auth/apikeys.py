@@ -1,13 +1,17 @@
-from app.core.config import settings
-from backend.app.api.deps.db import db_session
-from app.models.Users import User
-from app.models.APIKeys import APIKey
-from sqlmodel import select
 import hashlib
-import secrets
 import hmac
+import secrets
+
+from sqlmodel import select
+
+from app.core.config import settings
+from app.core.exceptions.exceptions import (ApiKeyNotFoundException,
+                                            UserNotFoundException)
+from app.models.APIKeys import APIKey
+from app.models.Users import User
+from backend.app.api.deps.db import db_session
 from backend.app.core.logger.logger import get_logger
-from app.core.exceptions.exceptions import UserNotFoundException, ApiKeyNotFoundException
+
 logger = get_logger(__name__)
 
 def _hash_api_key(api_key: str) -> str:

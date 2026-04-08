@@ -1,20 +1,22 @@
-from backend.app.api.deps.db import db_session
-from sqlmodel import select
-from app.models.Users import User, UserUpdate, UserCreate
-from app.core.auth.utils import get_blind_index
-from app.core.auth.jwt import get_password_hash, create_token
-from app.models.Tokens import TokenTypes
-from backend.app.core.logger.logger import get_logger
-from app.services.users import get_user_by_username, get_user_by_email
-from app.core.config import settings
-from app.services.email_service import send_activation_email
-from fastapi import BackgroundTasks
-from app.core.exceptions.exceptions import (
-    UsernameTakenException, EmailTakenException, UserNotFoundException
-
-)
-from structlog.contextvars import bind_contextvars
 from datetime import timedelta
+
+from fastapi import BackgroundTasks
+from sqlmodel import select
+from structlog.contextvars import bind_contextvars
+
+from app.core.auth.jwt import create_token, get_password_hash
+from app.core.auth.utils import get_blind_index
+from app.core.config import settings
+from app.core.exceptions.exceptions import (EmailTakenException,
+                                            UsernameTakenException,
+                                            UserNotFoundException)
+from app.models.Tokens import TokenTypes
+from app.models.Users import User, UserCreate, UserUpdate
+from app.services.email_service import send_activation_email
+from app.services.users import get_user_by_email, get_user_by_username
+from backend.app.api.deps.db import db_session
+from backend.app.core.logger.logger import get_logger
+
 logger = get_logger(__name__)
 ACTIVATE_TOKEN_EXPIRE_DAYS = settings.ACTIVATE_TOKEN_EXPIRE_DAYS
 PASSWORD_RESET_TOKEN_EXPIRE_MINUTES= settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES

@@ -1,5 +1,8 @@
-from app.core.auth.apikeys import generate_api_key_for_user, get_user_by_api_key, revoke_user_api_key
 import pytest
+
+from app.core.auth.apikeys import (generate_api_key_for_user,
+                                   get_user_by_api_key, revoke_user_api_key)
+
 
 @pytest.mark.asyncio
 async def test_api_key_for_user_flow(client, db_session):
@@ -15,6 +18,7 @@ async def test_api_key_for_user_flow(client, db_session):
     assert user.username == "TestUser"
 
     from sqlmodel import select
+
     from app.models.APIKeys import APIKey
     key_obj = (await db_session.exec(select(APIKey).where(APIKey.user_id == user.id))).first()
 

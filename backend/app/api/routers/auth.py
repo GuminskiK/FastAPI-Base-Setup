@@ -1,22 +1,18 @@
-from fastapi import APIRouter, Depends, Body, Request, Form, BackgroundTasks
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, Form, Request
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+
+from app.api.deps.users import current_admin_user, owner_or_admin
+from app.core.rate_limiting import limiter
+from app.models.Tokens import Token
+from app.models.Users import NewPasswordModel, UserRead
+from app.services.auth_service import (change_account_status, change_password,
+                                       change_superuser_status, delete_session,
+                                       fetch_auth_sessions, login_token)
+from app.services.auth_service import refresh_token as refresh_token_service
+from app.services.auth_service import revoke_refresh_token as logout_service
+from app.services.auth_service import send_change_password_mail
 from backend.app.api.deps.db import db_session
 from backend.app.api.deps.redis import redis_client
-from app.models.Tokens import Token
-from app.api.deps.users import owner_or_admin, current_admin_user
-from app.services.auth_service import (
-    login_token,
-    refresh_token as refresh_token_service,
-    revoke_refresh_token as logout_service,
-    fetch_auth_sessions,
-    delete_session,
-    change_superuser_status,
-    change_account_status,
-    send_change_password_mail,
-    change_password
-)
-from app.models.Users import UserRead, NewPasswordModel
-from app.core.rate_limiting import limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")

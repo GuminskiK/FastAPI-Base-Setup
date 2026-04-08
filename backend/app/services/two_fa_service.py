@@ -1,16 +1,18 @@
-import pyotp
-import qrcode
 import base64
 import io
 import secrets
-from app.models.Users import User
-from backend.app.api.deps.db import db_session 
-from app.core.config import settings
-from backend.app.core.logger.logger import get_logger
-from app.core.exceptions.exceptions import(
-    TwoFaAlreadyEnabledException, TwoFaNotInitiatedException, Invalid2FACodeException, TwoFaNotEnabledException
-)
 
+import pyotp
+import qrcode
+
+from app.core.config import settings
+from app.core.exceptions.exceptions import (Invalid2FACodeException,
+                                            TwoFaAlreadyEnabledException,
+                                            TwoFaNotEnabledException,
+                                            TwoFaNotInitiatedException)
+from app.models.Users import User
+from backend.app.api.deps.db import db_session
+from backend.app.core.logger.logger import get_logger
 
 logger = get_logger(__name__)
 

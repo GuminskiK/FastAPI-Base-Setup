@@ -1,37 +1,33 @@
-from fastapi import Depends, Request, Form, BackgroundTasks
-from fastapi.security import OAuth2PasswordRequestForm
-from sqlmodel import select
-from app.models.Users import User
-from app.core.auth.jwt import (
-    verify_password,
-    create_token,
-    decode_token,
-    is_refresh_valid,
-    revoke_refresh,
-    store_refresh_token,
-    revoke_all_user_sessions,
-    get_password_hash
-)
-from backend.app.core.logger.logger import get_logger
-import time
-from backend.app.api.deps.db import db_session
-from app.services.users import get_user_by_username, get_user_by_email
-from backend.app.api.deps.redis import redis_client
-from app.models.Tokens import Token, TokenTypes
-from app.services.users import owner_or_admin, get_user_by_id
-import pyotp
-from app.core.config import settings
-from datetime import timedelta
-from app.services.email_service import send_password_reset_email
 import asyncio
+import time
+from datetime import timedelta
+
+import pyotp
+from fastapi import BackgroundTasks, Depends, Form, Request
+from fastapi.security import OAuth2PasswordRequestForm
 from passlib.context import CryptContext
+from sqlmodel import select
 
-from app.core.exceptions.exceptions import(
-
-    InvalidCredentialsException, Required2FACodeException, Invalid2FACodeException,
-    InvalidTokenException, WrongTokenTypeException, RefreshTokenReuseException, RefreshTokenRevokeOrExpiredException,
-    SessionNotFoundException, UserNotFoundException, RefreshTokenRevokeFailedException
-)
+from app.api.deps.users import owner_or_admin
+from app.core.auth.jwt import (create_token, decode_token, get_password_hash,
+                               is_refresh_valid, revoke_all_user_sessions,
+                               revoke_refresh, store_refresh_token,
+                               verify_password)
+from app.core.config import settings
+from app.core.exceptions.exceptions import (
+    Invalid2FACodeException, InvalidCredentialsException,
+    InvalidTokenException, RefreshTokenReuseException,
+    RefreshTokenRevokeFailedException, RefreshTokenRevokeOrExpiredException,
+    Required2FACodeException, SessionNotFoundException, UserNotFoundException,
+    WrongTokenTypeException)
+from app.models.Tokens import Token, TokenTypes
+from app.models.Users import User
+from app.services.email_service import send_password_reset_email
+from app.services.users import (get_user_by_email, get_user_by_id,
+                                get_user_by_username)
+from backend.app.api.deps.db import db_session
+from backend.app.api.deps.redis import redis_client
+from backend.app.core.logger.logger import get_logger
 
 logger = get_logger(__name__)
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
@@ -150,7 +146,6 @@ async def revoke_refresh_token(redis: redis_client, refresh_token: str):
             from app.core.auth.jwt import revoke_refresh as jwt_revoke_refresh
             await jwt_revoke_refresh(redis, jti)
             logger.info("refresh_token_revoked", jti=jti, user_id=str(payload.get("id")))
-            raise RefreshTokenRevokeOrExpiredException()
     except Exception as e:
         logger.warning("refresh_token_revoke_failed", error=str(e))
         raise RefreshTokenRevokeFailedException()

@@ -1,6 +1,7 @@
-from sqlmodel import SQLModel, Field, Column, Relationship, JSON
-from typing import Optional, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
+
 from pydantic import EmailStr, field_validator
+from sqlmodel import JSON, Column, Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from .APIKeys import APIKey

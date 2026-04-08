@@ -1,6 +1,8 @@
-from sqlmodel import SQLModel
-from pydantic import ConfigDict
 from enum import Enum
+
+from pydantic import ConfigDict
+from sqlmodel import SQLModel
+
 
 class TokenTypes(str, Enum):
     ACCESS = "access"

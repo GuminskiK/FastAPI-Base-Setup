@@ -1,11 +1,15 @@
-from backend.app.api.deps.db import db_session
-from app.models.Users import User
-from app.core.auth.apikeys import generate_api_key_for_user, revoke_user_api_key
 from sqlmodel import select
-from app.models.APIKeys import APIKey
-from app.core.exceptions.exceptions import AdminForibiddenFromCreatingApiKeyException
-from backend.app.core.logger.logger import get_logger
 from structlog.contextvars import bind_contextvars
+
+from app.core.auth.apikeys import (generate_api_key_for_user,
+                                   revoke_user_api_key)
+from app.core.exceptions.exceptions import \
+    AdminForibiddenFromCreatingApiKeyException
+from app.models.APIKeys import APIKey
+from app.models.Users import User
+from backend.app.api.deps.db import db_session
+from backend.app.core.logger.logger import get_logger
+
 logger = get_logger(__name__)
 
 async def validate_and_create_apikey(user: User, session: db_session, name: str):

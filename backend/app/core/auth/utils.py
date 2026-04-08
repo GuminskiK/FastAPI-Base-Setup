@@ -1,4 +1,5 @@
 import hashlib
+
 from app.core.config import settings
 
 SECRET_KEY = settings.SECRET_KEY

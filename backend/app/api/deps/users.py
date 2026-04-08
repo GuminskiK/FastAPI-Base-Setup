@@ -1,16 +1,17 @@
-from app.core.auth.apikeys import get_user_by_api_key
-from backend.app.api.deps.db import db_session
-from app.models.Users import User
-from app.core.config import settings
-from fastapi import Depends, HTTPException, status
-from jose import jwt, JWTError
-from fastapi.security import OAuth2PasswordBearer, APIKeyHeader
 from typing import Annotated, Optional
-from app.core.exceptions.exceptions import (
-    AdminNeededException, AdminOrOwnerNeededException
-)
-from app.services.users import get_user_by_username
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import APIKeyHeader, OAuth2PasswordBearer
+from jose import JWTError, jwt
 from structlog.contextvars import bind_contextvars
+
+from app.core.auth.apikeys import get_user_by_api_key
+from app.core.config import settings
+from app.core.exceptions.exceptions import (AdminNeededException,
+                                            AdminOrOwnerNeededException)
+from app.models.Users import User
+from app.services.users import get_user_by_username
+from backend.app.api.deps.db import db_session
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
