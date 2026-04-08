@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     ACTIVATE_TOKEN_EXPIRE_DAYS: int = 1
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 60
     FIRST_SUPERUSER: str = "admin123"
+    FIRST_SUPERUSER_PASSWORD: str = "changeme"
 
     MAIL_USERNAME: str | None = None
     MAIL_PASSWORD: str | None = None
