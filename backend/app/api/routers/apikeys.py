@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException
-from app.services.users import current_user, owner_or_admin
+from fastapi import APIRouter
+from app.api.deps.users import current_user, owner_or_admin
 from backend.app.api.deps.db import db_session
 from app.services.apikeys_service import validate_and_create_apikey, revoke_apikey, fetch_user_apikeys
 

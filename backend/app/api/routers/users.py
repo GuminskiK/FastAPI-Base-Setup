@@ -2,7 +2,7 @@ from fastapi import APIRouter, BackgroundTasks
 from backend.app.api.deps.db import db_session
 from app.models.Users import UserRead, UserUpdate, UserCreate
 from typing import List
-from app.services.users import current_admin_user, current_active_user
+from app.api.deps.users import current_admin_user, current_active_user
 from app.services.users_crud import (
     remove_user, update_user, fetch_user,
     fetch_all_users, create_user)
@@ -24,7 +24,6 @@ async def get_user(session: db_session, user_id: int, admin: current_admin_user)
 async def get_all_users(session: db_session, admin: current_admin_user):
 
     return await fetch_all_users(session)
-
 
 @router.patch("/{user_id}", response_model=UserRead)
 async def patch_user_admin(session: db_session, user: UserUpdate, user_id: int, admin: current_admin_user):

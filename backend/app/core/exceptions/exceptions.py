@@ -38,6 +38,11 @@ class UserNotFoundException(ResourceNotFoundException):
             status_code=status.HTTP_404_NOT_FOUND, detail=f"{resource_name} not found"
         )
 
+class ApiKeyNotFoundException(ResourceNotFoundException):
+    def __init__(self, resource_name: str = "Apikey"):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"{resource_name} not found"
+        )
 ##########################
 
 class AdminForibiddenFromCreatingApiKeyException(ForbiddenException):

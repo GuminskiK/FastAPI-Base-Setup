@@ -10,6 +10,7 @@ from app.core.exceptions.exceptions import (
     AdminNeededException, AdminOrOwnerNeededException
 )
 from app.services.users import get_user_by_username
+from structlog.contextvars import bind_contextvars
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
@@ -29,10 +30,13 @@ async def get_current_active_user( session: db_session, token: Optional[str] = D
                 raise credentials_exception
             user = await get_user_by_username(session, username)
             if user:
+                bind_contextvars(
+                    active_user = user.id
+                )
                 return user
         except JWTError:
             pass
-            
+    
     print(f"Exception! Token was {token}")
     raise credentials_exception
 
@@ -41,6 +45,9 @@ async def get_current_user( session: db_session, token: Optional[str] = Depends(
     if api_key:
         user = await get_user_by_api_key(session, api_key)
         if user:
+            bind_contextvars(
+                    active_user = user.id
+            )
             return user
             
     return await get_current_active_user(session, token)

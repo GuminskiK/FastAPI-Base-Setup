@@ -5,6 +5,7 @@ from sqlmodel import select
 from app.models.APIKeys import APIKey
 from app.core.exceptions.exceptions import AdminForibiddenFromCreatingApiKeyException
 from backend.app.core.logger.logger import get_logger
+from structlog.contextvars import bind_contextvars
 logger = get_logger(__name__)
 
 async def validate_and_create_apikey(user: User, session: db_session, name: str):
@@ -18,6 +19,10 @@ async def validate_and_create_apikey(user: User, session: db_session, name: str)
     return {"api_key": key}
 
 async def revoke_apikey(key_id: int, user: User, session: db_session):
+
+    bind_contextvars(
+        target_key = key_id
+    )
 
     await revoke_user_api_key(session, user.id, key_id)
     logger.info("api_key_revoked", user_id=str(user.id), key_id=key_id)

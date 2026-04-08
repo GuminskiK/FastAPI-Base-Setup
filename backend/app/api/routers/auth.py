@@ -1,22 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Body, Request, Form, BackgroundTasks
+from fastapi import APIRouter, Depends, Body, Request, Form, BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from backend.app.api.deps.db import db_session
 from backend.app.api.deps.redis import redis_client
 from app.models.Tokens import Token
-from app.services.users import owner_or_admin, current_admin_user
+from app.api.deps.users import owner_or_admin, current_admin_user
 from app.services.auth_service import (
     login_token,
     refresh_token as refresh_token_service,
     revoke_refresh_token as logout_service,
     fetch_auth_sessions,
     delete_session,
-    LoginTokenResult,
-    RefreshTokenResult,
-    DeleteSessionResult,
-    change_superuser_status, ChangeSuperuserStatusResult,
-    change_account_status, ActivateTokenResult,
+    change_superuser_status,
+    change_account_status,
     send_change_password_mail,
-    change_password, ChangePasswordResult
+    change_password
 )
 from app.models.Users import UserRead, NewPasswordModel
 from app.core.rate_limiting import limiter

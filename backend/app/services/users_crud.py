@@ -13,6 +13,7 @@ from app.core.exceptions.exceptions import (
     UsernameTakenException, EmailTakenException, UserNotFoundException
 
 )
+from structlog.contextvars import bind_contextvars
 from datetime import timedelta
 logger = get_logger(__name__)
 ACTIVATE_TOKEN_EXPIRE_DAYS = settings.ACTIVATE_TOKEN_EXPIRE_DAYS
@@ -73,6 +74,10 @@ async def fetch_all_users(session: db_session):
 
 async def update_user(session: db_session, user: UserUpdate, user_id: int):
     
+    bind_contextvars(
+        target_user = user_id
+    )
+
     result = await session.exec(select(User).where(User.id == user_id))
     db_user = result.one_or_none()
 
@@ -101,6 +106,10 @@ async def update_user(session: db_session, user: UserUpdate, user_id: int):
     return db_user
 
 async def remove_user(session: db_session, user_id: int):
+
+    bind_contextvars(
+        target_user = user_id
+    )
 
     result = await session.exec(select(User).where(User.id == user_id))
     db_user = result.one_or_none()
