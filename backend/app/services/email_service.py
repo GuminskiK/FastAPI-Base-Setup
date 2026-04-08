@@ -2,7 +2,7 @@ from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 from pydantic import EmailStr
 
 from app.core.config import settings
-from backend.app.core.logger.logger import get_logger
+from app.core.logger.logger import get_logger
 
 logger = get_logger(__name__)
 

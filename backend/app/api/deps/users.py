@@ -11,7 +11,7 @@ from app.core.exceptions.exceptions import (AdminNeededException,
                                             AdminOrOwnerNeededException)
 from app.models.Users import User
 from app.services.users import get_user_by_username
-from backend.app.api.deps.db import db_session
+from app.api.deps.db import db_session
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)

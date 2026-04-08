@@ -7,8 +7,8 @@ from app.core.exceptions.exceptions import \
     AdminForibiddenFromCreatingApiKeyException
 from app.models.APIKeys import APIKey
 from app.models.Users import User
-from backend.app.api.deps.db import db_session
-from backend.app.core.logger.logger import get_logger
+from app.api.deps.db import db_session
+from app.core.logger.logger import get_logger
 
 logger = get_logger(__name__)
 

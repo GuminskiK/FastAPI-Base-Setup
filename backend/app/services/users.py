@@ -4,7 +4,7 @@ from sqlmodel import select
 
 from app.core.auth.utils import get_blind_index
 from app.models.Users import User
-from backend.app.api.deps.db import db_session
+from app.api.deps.db import db_session
 
 
 async def get_user_by_id(session: db_session, id: int) -> User | None:

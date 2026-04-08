@@ -9,10 +9,10 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.api.routers import apikeys, auth, two_fa, users
 from app.core.health import check_db, check_disk, check_redis
 from app.core.rate_limiting import limiter
-from backend.app.api.deps.db import db_session
-from backend.app.api.deps.redis import redis_client
-from backend.app.core.logger.logger import setup_logging
-from backend.app.core.logger.logging_middleware import StructlogMiddleware
+from app.api.deps.db import db_session
+from app.api.deps.redis import redis_client
+from app.core.logger.logger import setup_logging
+from app.core.logger.logging_middleware import StructlogMiddleware
 
 # Initialize structural logging globally
 setup_logging(json_logs=False, log_level="INFO")  # SET json_logs=True for Sentry/Loki!
@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
     from app.core.auth.utils import get_blind_index
     from app.core.config import settings
     from app.models.Users import User
-    from backend.app.api.deps.db import AsyncSessionLocal, engine
+    from app.api.deps.db import AsyncSessionLocal, engine
 
     # Utworzenie wszystkich tabel przez engine
     try:

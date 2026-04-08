@@ -4,7 +4,7 @@ from app.api.deps.users import current_active_user
 from app.core.config import settings
 from app.services.two_fa_service import (generate_setup_data,
                                          verify_and_disable, verify_and_enable)
-from backend.app.api.deps.db import db_session
+from app.api.deps.db import db_session
 
 router = APIRouter(prefix="/2fa", tags=["2fa"])
 

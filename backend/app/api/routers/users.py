@@ -6,7 +6,7 @@ from app.api.deps.users import current_active_user, current_admin_user
 from app.models.Users import UserCreate, UserRead, UserUpdate
 from app.services.users_crud import (create_user, fetch_all_users, fetch_user,
                                      remove_user, update_user)
-from backend.app.api.deps.db import db_session
+from app.api.deps.db import db_session
 
 router = APIRouter(prefix="/users", tags=["users"])
 

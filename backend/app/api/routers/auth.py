@@ -11,8 +11,8 @@ from app.services.auth_service import (change_account_status, change_password,
 from app.services.auth_service import refresh_token as refresh_token_service
 from app.services.auth_service import revoke_refresh_token as logout_service
 from app.services.auth_service import send_change_password_mail
-from backend.app.api.deps.db import db_session
-from backend.app.api.deps.redis import redis_client
+from app.api.deps.db import db_session
+from app.api.deps.redis import redis_client
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")

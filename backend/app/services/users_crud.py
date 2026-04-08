@@ -14,8 +14,8 @@ from app.models.Tokens import TokenTypes
 from app.models.Users import User, UserCreate, UserUpdate
 from app.services.email_service import send_activation_email
 from app.services.users import get_user_by_email, get_user_by_username
-from backend.app.api.deps.db import db_session
-from backend.app.core.logger.logger import get_logger
+from app.api.deps.db import db_session
+from app.core.logger.logger import get_logger
 
 logger = get_logger(__name__)
 ACTIVATE_TOKEN_EXPIRE_DAYS = settings.ACTIVATE_TOKEN_EXPIRE_DAYS

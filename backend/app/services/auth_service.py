@@ -25,9 +25,9 @@ from app.models.Users import User
 from app.services.email_service import send_password_reset_email
 from app.services.users import (get_user_by_email, get_user_by_id,
                                 get_user_by_username)
-from backend.app.api.deps.db import db_session
-from backend.app.api.deps.redis import redis_client
-from backend.app.core.logger.logger import get_logger
+from app.api.deps.db import db_session
+from app.api.deps.redis import redis_client
+from app.core.logger.logger import get_logger
 
 logger = get_logger(__name__)
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
