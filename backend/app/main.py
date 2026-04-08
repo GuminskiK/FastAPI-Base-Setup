@@ -13,7 +13,7 @@ from app.api.deps.db import db_session
 from app.api.deps.redis import redis_client
 from app.core.logger.logger import setup_logging
 from app.core.logger.logging_middleware import StructlogMiddleware
-
+from app.core.config import settings
 # Initialize structural logging globally
 setup_logging(json_logs=False, log_level="INFO")  # SET json_logs=True for Sentry/Loki!
 
@@ -58,7 +58,10 @@ async def lifespan(app: FastAPI):
         print(f"Skipping DB init / superuser creation, DB likely not initialized or unreachable (e.g. Test Mode): {e}")
     yield
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,     
+    title=settings.APP_NAME,
+    root_path="/api")
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)

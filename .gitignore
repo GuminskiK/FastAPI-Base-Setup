@@ -41,3 +41,5 @@ rssbridge_data/
 *.log
 .env
 ./backend/.venv
+
+server.*
