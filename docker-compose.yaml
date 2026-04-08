@@ -2,52 +2,56 @@ services:
   backend:
     build: 
       context: ./backend
-    ports:
-      - "8000:8000"
     volumes:
       - ./backend:/app
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://user:password@db:5432/db
-      - REDIS_URL=redis://redis:6379/0
-      - APP_NAME=App
-      - SECRET_KEY=53bd75c62d71250aa002f0cff32cbe858661bb1159e15cdf454dd19b75a563f9
-      - ALGORITHM=HS256
-      - ACCESS_TOKEN_EXPIRE_MINUTES=10
-      - REFRESH_TOKEN_EXPIRE_DAYS=14
-      - ACTIVATE_TOKEN_EXPIRE_DAYS=1
-      - PASSWORD_RESET_TOKEN_EXPIRE_MINUTES=60
-      - FIRST_SUPERUSER="admin"
-      - MAIL_SERVER=mailpit # tu wpisujesz nazwę serwisu zamiast localhost
-      - MAIL_PORT=1025
-      - FRONTEND_URL=http://localhost:3000
+    env_file:
+      - .env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
 
   db:
     image: postgres:15-alpine
-    restart: always
+    restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=db
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
 
   redis:
-    image: redis:7
+    image: redis:7-alpine
     container_name: redis
-    restart: always
-    ports:
-      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - redis_data:/data
+    networks:
+      - app-network
 
   mailpit:
     image: axllent/mailpit
     container_name: mailpit
+    restart: unless-stopped
     ports:
-      - "8025:8025" # UI w przeglądarce pod adresem http://localhost:8025
-      - "1025:1025" # Nasz serwer wpisany w configu (SMTP PORT)
+      - "8025:8025"
+    networks:
+      - app-network
   
   init-certs:
     image: alpine/openssl
@@ -65,8 +69,9 @@ services:
             fi"
 
   nginx:
-    image: nginx:latest
+    image: nginx:alpine
     container_name: creatorhub_nginx
+    restart: unless-stopped
     ports:
       - "8080:80"
       - "443:443"
@@ -75,9 +80,18 @@ services:
       - ./nginx/certs:/etc/nginx/certs:ro
       - frontend_static:/usr/share/nginx/html:ro
     depends_on:
-      - backend
-      - init-certs
+      backend:
+        condition: service_started
+      init-certs:
+        condition: service_completed_successfully
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
   redis_data:
+  frontend_static:
+
+networks:
+  app-network:
+    driver: bridge
